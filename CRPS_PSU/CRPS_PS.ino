@@ -51,12 +51,14 @@ volatile int key;
 boolean pec = true;        // PEC(Packet Errot Code) support 
 
 const int kBuzzerPin = 15;
+const int kButtonPin = 24;
 static uint8_t ps_i2c_address;
 static LT_SMBus *smbus = new LT_SMBusNoPec();
 static LT_PMBus *pmbus = new LT_PMBus(smbus);
 
 void setup()
 {
+  pinMode(kButtonPin, INPUT_PULLUP);
   u8g2.begin();
   Serial.begin(115200);         //! Initialize the serial port to the PC 115200
   irrecv.enableIRIn();
@@ -86,6 +88,7 @@ void setup()
 
 void loop()
 {
+    ButtonDetect();
     IrDetect();
         switch (key)
           {
@@ -100,6 +103,7 @@ void loop()
             print_all_status();
               break;
             case 4:
+            key = 0;
               break;
             case 5:
               break;
@@ -110,7 +114,7 @@ void loop()
               key = 0;
               break;
           }
-            delay(1000);
+            delay(100);
   }
 
 void print_title()
@@ -292,6 +296,15 @@ void displayPecOff(){
       u8g2.setCursor(0, 40);
       u8g2.sendBuffer();
       Serial.println(F("PEC Off"));
+}
+void ButtonDetect(){
+  if (digitalRead(kButtonPin) == 0){
+    delay(10);
+    if(digitalRead(kButtonPin) == 0){
+      sound();
+      key++;
+    }
+  }
 }
 void IrDetect(){
   if (irrecv.decode(&results)) {
