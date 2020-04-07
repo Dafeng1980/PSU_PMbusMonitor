@@ -138,7 +138,7 @@ void print_all_status()
 
 void ReadMfrRev(){
   int address;
-  uint8_t values[6];
+  uint8_t values[7];
   u8g2.clearBuffer();
   u8g2.setFontMode(1);
   u8g2.setFont(u8g2_font_8x13_tr); 
@@ -151,7 +151,7 @@ void ReadMfrRev(){
             LT_Wire.write(0xB4);
             LT_Wire.endTransmission(false);
             LT_Wire.beginTransmission(address);
-            LT_Wire.requestFrom(address, values, 0x06);
+            LT_Wire.requestFrom(address, values, 0x07);
             u8g2.setCursor(0,13);
             u8g2.print(F("MFR_REV"));
             u8g2.setCursor(0,26);
