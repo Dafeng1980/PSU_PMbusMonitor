@@ -88,8 +88,8 @@ void setup()
 
 void loop()
 {
-    ButtonDetect();
-    IrDetect();
+    checkButton();
+    detectIR();
         switch (key)
           {
             case 1:
@@ -297,7 +297,7 @@ void displayPecOff(){
       u8g2.sendBuffer();
       Serial.println(F("PEC Off"));
 }
-void ButtonDetect(){
+void checkButton(){
   if (digitalRead(kButtonPin) == 0){
     delay(10);
     if(digitalRead(kButtonPin) == 0){
@@ -306,7 +306,7 @@ void ButtonDetect(){
     }
   }
 }
-void IrDetect(){
+void detectIR(){
   if (irrecv.decode(&results)) {
          sound();
    // Serial.println(results.value, HEX);
