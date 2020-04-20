@@ -42,17 +42,19 @@ modification, are permitted provided that the following conditions are met:
 
 #define IRPIN 22                     //Nano board pin 22
 #define PS_I2C_ADDRESS 0x58         // PMbus Power Supply address
-
+#define PS_PARTNER_ADDRESS 0x5F       
 IRrecv irrecv(IRPIN);
 decode_results results;
 U8G2_SH1106_128X64_NONAME_F_SW_I2C u8g2(U8G2_R0, 20, 21, /* reset=*/ U8X8_PIN_NONE);   //Nano board Pin D20 SCL, S21, SDA 
 // Global variables
 volatile int key;           
-boolean pec = true;        // PEC(Packet Errot Code) support 
+ //boolean pec = true;        // PEC(Packet Errot Code) support 
+ boolean pec = false; 
 
 const int kBuzzerPin = 15;
 const int kButtonPin = 24;
 static uint8_t ps_i2c_address;
+static uint8_t ps_patner_address;
 static LT_SMBus *smbus = new LT_SMBusNoPec();
 static LT_PMBus *pmbus = new LT_PMBus(smbus);
 
@@ -64,6 +66,7 @@ void setup()
   irrecv.enableIRIn();
      print_title();
       ps_i2c_address = PS_I2C_ADDRESS;
+      ps_patner_address = PS_PARTNER_ADDRESS;
           if (pec)
        {
          //pmbus->enablePec(PS_i2c_address);
@@ -96,16 +99,20 @@ void loop()
             print_all_volt_curr();
               break;
             case 2:
-            print_all_sensors();
-            
+           // print_all_sensors();
+            displaycurrent();
               break;
             case 3:
-            print_all_status();
+            CrbusSetA();
+            key = 2;
+           // print_all_status();
               break;
             case 4:
             key = 0;
               break;
             case 5:
+            CrbusSet();
+            key = 2;
               break;
             case 0:
               print_memu();
@@ -297,7 +304,56 @@ void displayPecOff(){
       u8g2.sendBuffer();
       Serial.println(F("PEC Off"));
 }
+<<<<<<< HEAD
 void checkButton(){
+=======
+
+void CrbusSetA(){
+ // smbus -> writeByte(ps_i2c_address, 0xD0, 0x00);
+  smbus -> writeByte(ps_i2c_address, 0xD0, 0x01);
+  delay(10);
+  smbus -> writeByte(ps_patner_address, 0xD0, 0x02);
+  // delay(50);
+   u8g2.clearBuffer();
+   u8g2.setFontMode(1);
+   u8g2.setFont(u8g2_font_8x13_tr);    
+   u8g2.setCursor(0,26);
+   u8g2.print(F("CRBUS_SET_OK"));
+   u8g2.sendBuffer();
+}
+
+void CrbusSet(){
+ // smbus -> writeByte(ps_i2c_address, 0xD0, 0x00);
+  smbus -> writeByte(ps_i2c_address, 0xD0, 0x00);
+  delay(10);
+ smbus -> writeByte(ps_patner_address, 0xD0, 0x02);
+  // delay(50);
+   u8g2.clearBuffer();
+   u8g2.setFontMode(1);
+   u8g2.setFont(u8g2_font_8x13_tr);    
+   u8g2.setCursor(0,26);
+   u8g2.print(F("CRBUS_SET_OK"));
+   u8g2.sendBuffer();
+}
+
+void displaycurrent(){
+    float current;
+     u8g2.clearBuffer();
+     u8g2.setFontMode(1);
+     u8g2.setFont(u8g2_font_8x13_tr);
+        
+  current = pmbus->readIout(ps_i2c_address, false);
+          u8g2.setCursor(0,13);
+          u8g2.print(F("B0_Cur= "));
+        u8g2.print(current, 2);
+  current = pmbus->readIout(ps_patner_address, false);
+        u8g2.setCursor(0,39);
+        u8g2.print(F("BE_Cur= "));
+        u8g2.print(current, 2);
+        u8g2.sendBuffer(); 
+}
+void ButtonDetect(){
+>>>>>>> 096465924f78bb14f8b749760788ff8334128d50
   if (digitalRead(kButtonPin) == 0){
     delay(10);
     if(digitalRead(kButtonPin) == 0){
