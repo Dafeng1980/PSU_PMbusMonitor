@@ -103,7 +103,7 @@ void loop()
             displaycurrent();
               break;
             case 3:
-            CrbusSetA();
+            CrbusSet();
             key = 2;
            // print_all_status();
               break;
@@ -111,7 +111,7 @@ void loop()
             key = 0;
               break;
             case 5:
-            CrbusSet();
+           // CrbusSet();
             key = 2;
               break;
             case 0:
@@ -304,23 +304,6 @@ void displayPecOff(){
       u8g2.sendBuffer();
       Serial.println(F("PEC Off"));
 }
-<<<<<<< HEAD
-void checkButton(){
-=======
-
-void CrbusSetA(){
- // smbus -> writeByte(ps_i2c_address, 0xD0, 0x00);
-  smbus -> writeByte(ps_i2c_address, 0xD0, 0x01);
-  delay(10);
-  smbus -> writeByte(ps_patner_address, 0xD0, 0x02);
-  // delay(50);
-   u8g2.clearBuffer();
-   u8g2.setFontMode(1);
-   u8g2.setFont(u8g2_font_8x13_tr);    
-   u8g2.setCursor(0,26);
-   u8g2.print(F("CRBUS_SET_OK"));
-   u8g2.sendBuffer();
-}
 
 void CrbusSet(){
  // smbus -> writeByte(ps_i2c_address, 0xD0, 0x00);
@@ -352,8 +335,7 @@ void displaycurrent(){
         u8g2.print(current, 2);
         u8g2.sendBuffer(); 
 }
-void ButtonDetect(){
->>>>>>> 096465924f78bb14f8b749760788ff8334128d50
+void checkButton(){
   if (digitalRead(kButtonPin) == 0){
     delay(10);
     if(digitalRead(kButtonPin) == 0){
