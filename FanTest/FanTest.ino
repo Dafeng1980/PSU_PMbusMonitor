@@ -3,6 +3,7 @@ Atmega644PA Board, External 8Mhz@3.3V
 https://github.com/Dafeng1980/AtmegaBoards
 
 */
+const byte FAN_ADJ_PIN = A0;
 const byte OC1A_PIN = 13;        //
 const byte OC1B_PIN = 12;
 const byte HALLSENSOR = 10;     //INT0 at Mega644P
@@ -13,6 +14,7 @@ const uint8_t fandiv = 2;  //This is the variable used to select the fan and it'
 
 unsigned int NbTopsFan; 
 unsigned int fanSpeed;
+unsigned int adjval;
 
 
 void rpm ()
@@ -20,7 +22,8 @@ void rpm ()
 { NbTopsFan++; }
 
 void setup() {  
-  pinMode(OC1A_PIN, OUTPUT);      
+  pinMode(OC1A_PIN, OUTPUT); 
+  pinMode(FAN_ADJ_PIN, INPUT);     
   pinMode(HALLSENSOR, INPUT);
   
   Serial.begin(9600);
@@ -42,19 +45,18 @@ void setup() {
   TCCR1A |= (1 << COM1A1) | (1 << WGM11);
   TCCR1B |= (1 << WGM13) | (1 << CS10);
   ICR1 = TCNT1_TOP;
-  setPwmDuty(0);
+    setPwmDuty(0);
 }
 
 void loop() { 
-    setPwmDuty(30);      //Change this value 0-100 to adjust duty cycle
-//    delay(5000);
-//    setPwmDuty(50);
-//    delay(20000);
- fanSpeed = getfanrpm();
-//Prints the number calculated above
-Serial.print (fanSpeed, DEC);
-//Prints " rpm" and a new line
-Serial.print (" rpm\r\n");
+   adjval = analogRead(FAN_ADJ_PIN);
+   adjval = map(adjval, 0, 1023, 10, 100);
+   Serial.print ("adjval= ");
+   Serial.println (adjval, DEC);
+    setPwmDuty(adjval);      //Change this value 0-100 to adjust duty cycle
+    fanSpeed = getfanrpm();
+      Serial.print (fanSpeed, DEC);
+      Serial.print (" rpm\r\n");
 }
 
 unsigned int getfanrpm(){
