@@ -65,22 +65,22 @@ void print_all_volt_curr()
         u8g2.setCursor(78,20);
         u8g2.print(F("C="));
         u8g2.print(current, 2);
-          temp = pmbus->readOtemp(ps_i2c_address);           //temp sensor 0x8D  
-          voltage = pmbus->readItemp(ps_i2c_address);        //temp sensor 0x8E  
-          current = pmbus->readtemp3(ps_i2c_address);        //temp sensor 0x8F  
-          u8g2.setCursor(0,30);
-          u8g2.print(F("8D "));
-          u8g2.print(temp, 0);
-          u8g2.setCursor(42,30);
-          u8g2.print(F("8E "));
-          u8g2.print(voltage, 0);
-          u8g2.setCursor(84,30);
-          u8g2.print(F("8F "));
-          u8g2.print(current, 0);
-          temp = pmbus->readFanSpeed1(ps_i2c_address);
-           u8g2.setCursor(0,40);
-           u8g2.print(F("Fan1 Speed  "));
-           u8g2.print(temp, 1);
+//          temp = pmbus->readOtemp(ps_i2c_address);           //temp sensor 0x8D  
+//          voltage = pmbus->readItemp(ps_i2c_address);        //temp sensor 0x8E  
+//          current = pmbus->readtemp3(ps_i2c_address);        //temp sensor 0x8F  
+//          u8g2.setCursor(0,30);
+//          u8g2.print(F("8D "));
+//          u8g2.print(temp, 0);
+//          u8g2.setCursor(42,30);
+//          u8g2.print(F("8E "));
+//          u8g2.print(voltage, 0);
+//          u8g2.setCursor(84,30);
+//          u8g2.print(F("8F "));
+//          u8g2.print(current, 0);
+//          temp = pmbus->readFanSpeed1(ps_i2c_address);
+//           u8g2.setCursor(0,40);
+//           u8g2.print(F("Fan1 Speed  "));
+//           u8g2.print(temp, 1);
           w_val = pmbus->readStatusWord(ps_i2c_address);
           u8g2.setCursor(0,50);
           u8g2.print(F("STATUS WORD 0x"));
@@ -113,12 +113,18 @@ void print_all_status()
           u8g2.setCursor(0,30);
           u8g2.print(F("HIGH  "));
           u8g2.print((w_val >> 8), BIN);
-
+//
       io = pmbus -> readStatusIout(ps_i2c_address);
-      in = pmbus -> readStatusInput(ps_i2c_address);
-      tm = pmbus -> readStatusTemp(ps_i2c_address);
-      fa = pmbus -> readStatusFan(ps_i2c_address);
-      vo = pmbus -> readStatusVout(ps_i2c_address);
+          u8g2.setCursor(0,60);
+          u8g2.print(F("STATUS_IOUT "));
+          u8g2.print(io, HEX);
+//      in = pmbus -> readStatusInput(ps_i2c_address);
+//      tm = pmbus -> readStatusTemp(ps_i2c_address);
+//      fa = pmbus -> readStatusFan(ps_i2c_address);
+//          u8g2.setCursor(0,40);
+//          u8g2.print(F("STATUS FAN 0x"));
+//          u8g2.print(fa, HEX);
+//      vo = pmbus -> readStatusVout(ps_i2c_address);
       u8g2.sendBuffer();
 }
 
@@ -286,4 +292,49 @@ int readir(){
          } while( ch != 'a'); 
          irrecv.resume();
          return  accumulVal;
+}
+
+float readeout(){
+  uint8_t data[6];
+ // unsigned int m,b,r;
+  unsigned long maxValue,lastEnergyCount,lastSampleCount,currentEnergyCount,currentSampleCount;
+  float eoutResult;
+  u8g2.setFontMode(1);
+  u8g2.setFont(u8g2_font_6x10_tr);
+//  smbus -> readBlock(ps_i2c_address, 0x30, data, 5);
+//        u8g2.clearBuffer();
+//        u8g2.setCursor(0,10);
+//        u8g2.print(F("Data "));
+//        u8g2.print(data[0],HEX);
+//        u8g2.print(data[1],HEX);
+//        u8g2.print(data[2],HEX);
+//        u8g2.print(data[3],HEX);
+//        u8g2.print(data[4],HEX);
+//        u8g2.sendBuffer();
+//        delay(2000);
+//      m = data[1] * 256 + data[0];
+//      b = data[3] * 256 + data[2];
+//      r = data[4];
+//      maxValue = (m * 32767 + b)* pow(10,r);
+      maxValue = 32767;
+//      u8g2.clearBuffer();
+//      u8g2.setCursor(00,10);
+//      u8g2.print(F("MaxValue= "));
+//      u8g2.print(maxValue, DEC);
+//      u8g2.sendBuffer();
+    smbus -> readBlock(ps_i2c_address, 0x87, data, 6);             //EOUT 0x87
+    lastEnergyCount = data[0] + data[1]*0x100 + data[2]*maxValue;
+    lastSampleCount = data[3] + data[4]*0x100 + data[5]*0x10000;
+      delay(1000);
+      smbus -> readBlock(ps_i2c_address, 0x87, data, 6);
+      currentEnergyCount = data[0] + data[1]*0x100 + data[2]*maxValue;
+      currentSampleCount = data[3] + data[4]*0x100 + data[5]*0x10000;
+        u8g2.clearBuffer();
+        u8g2.setCursor(0,20);
+        u8g2.print(F("SampleCount"));
+        u8g2.setCursor(0,30);
+        u8g2.print(currentSampleCount - lastSampleCount);
+        u8g2.sendBuffer();
+    eoutResult = (float)(currentEnergyCount - lastEnergyCount)/(float)(currentSampleCount - lastSampleCount);
+    return eoutResult; 
 }

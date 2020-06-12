@@ -95,106 +95,166 @@ void loop()
   switch (key)
     {
       case 1:
-        print_all_volt_curr();
+      //print_all_status();
+      print_all_volt_curr();
+       // print_all_volt_curr();
+//        while(digitalRead(kButtonPin) != 0);
+//        sound();
+//        delay(500);
+//        print_all_status();
+//        while(digitalRead(kButtonPin) != 0);
+//        sound();
+//        delay(500);
         break;
-          
+      
       case 2:
-        getFwRev();
+
+      displaycurrent();
+     while(digitalRead(kButtonPin) != 0);
+     sound();
+     delay(500); 
+     setCrbus();
+     while(digitalRead(kButtonPin) != 0);
+     sound();
+     delay(500); 
+      displaycurrent();
+     while(digitalRead(kButtonPin) != 0);
+     sound();
+     delay(500); 
+     key = 0;
+     // print_all_status();
+        break;
+               
+      case 3:
+//        float val;
+//        val = readeout();
+//      u8g2.clearBuffer();
+//      u8g2.setFontMode(1);
+//      u8g2.setFont(u8g2_font_8x13_tr);    
+//      u8g2.setCursor(00,26);
+//      u8g2.print(F("EOUT= "));
+//      u8g2.print(val, 2);
+//      u8g2.sendBuffer();
+//      while(digitalRead(kButtonPin) != 0);
+//      sound();
+//        pmbus->clearFaults(ps_i2c_address);
+//      u8g2.clearBuffer();
+//      u8g2.setFontMode(1);
+//      u8g2.setFont(u8g2_font_8x13_tr);    
+//      u8g2.setCursor(0, 30);
+//      u8g2.print(F("ClearFaults"));  
+//      u8g2.sendBuffer();
+//        while(digitalRead(kButtonPin) != 0);
+//        sound();
+        getSerial();
+        while(digitalRead(kButtonPin) != 0);
+        sound();
+        delay(500);      
+        getId();
         while(digitalRead(kButtonPin) != 0);
         sound();
         delay(500);
         key = 1;
-           // print_all_sensors();
            // print_all_status();
         break;
-            
-      case 6:
-        factoryMode();
-        setvoltagecal(true);   // TRUE is Vmain ; FALSE is Vsb  
-        delay(100);
-        key = 7;              
-        break;
-                        
-      case 7:
-        u8g2.clearBuffer();
-        u8g2.setCursor(0,13);
-        u8g2.print(F("Up_Step"));
-        u8g2.sendBuffer(); 
-        calval = readir();
-        calVoltage(calval);
-          sound();       
-          u8g2.clearBuffer();    
-          u8g2.setCursor(8,13);
-          u8g2.print(F("Up_Step Frist"));
-          u8g2.sendBuffer();
-          while(digitalRead(kButtonPin) != 0);  // 
-            sound();
-            calval = readir();
-            calVoltage(calval);
-              sound();
-              u8g2.clearBuffer();   
-              u8g2.setCursor(8,13);
-              u8g2.print(F("Up_Step Second"));
-              u8g2.sendBuffer();
-              while(digitalRead(kButtonPin) != 0);  //           
-                sound();
-                u8g2.clearBuffer();
-                u8g2.setCursor(0,13);
-                u8g2.print(F("choose 7 to up"));        
-                u8g2.setCursor(0,38);
-                u8g2.print(F("choose 8 to down"));
-                u8g2.setCursor(0,64);
-                u8g2.print(F("choose 9 to exit"));
-                u8g2.sendBuffer();
-                delay(500);
-                  n = readir();
-                    if( n == 7 || n == 8)
-                      key = n;
-                    else 
-                      key = 9;                    
-            break;
-            
-        case 8:
-          u8g2.clearBuffer();
-          u8g2.setCursor(0,13);
-          u8g2.print(F("Down_Step"));
-          u8g2.sendBuffer();
-          calval = 0 - readir();
-          calVoltage(calval);
-            sound();
-            u8g2.clearBuffer(); 
-            u8g2.setCursor(0,13);
-            u8g2.print(F("Down_Step Frist"));
-            u8g2.sendBuffer();
-            while(digitalRead(kButtonPin) != 0);
-              sound();
-              calval = 0 - readir();
-              calVoltage(calval);
-                sound();
-                u8g2.clearBuffer();
-                u8g2.setCursor(0,13);
-                u8g2.print(F("Down_Step Second"));
-                u8g2.sendBuffer();
-                while(digitalRead(kButtonPin) != 0);  //           
-                  sound();
-                  u8g2.clearBuffer();
-                  u8g2.setCursor(0,13);
-                  u8g2.print(F("choose 7 to up"));        
-                  u8g2.setCursor(0,38);
-                  u8g2.print(F("choose 8 to down"));
-                  u8g2.setCursor(0,64);
-                  u8g2.print(F("choose 9 to exit"));
-                  u8g2.sendBuffer();
-                  delay(500);
-                    n = readir();
-                      if( n == 7 || n == 8)
-                        key = n;
-                      else 
-                        key = 9;  
-            break;
+//           case 3:
+//        factoryMode();
+//        setwritefru();
+//        writeserial();
+//        //setvoltagecal(true);   // TRUE is Vmain ; FALSE is Vsb  
+//        while(digitalRead(kButtonPin) != 0);
+//        sound();
+//        delay(100);
+//        exitFactoryMode();
+//        key = 0;              
+//        break;
+//      case 3:
+//        factoryMode();
+//        setvoltagecal(true);   // TRUE is Vmain ; FALSE is Vsb  
+//        delay(100);
+//        key = 7;              
+//        break;
+//                        
+//      case 7:
+//        u8g2.clearBuffer();
+//        u8g2.setCursor(0,13);
+//        u8g2.print(F("Up_Step"));
+//        u8g2.sendBuffer(); 
+//        calval = readir();
+//        calVoltage(calval);
+//          sound();       
+//          u8g2.clearBuffer();    
+//          u8g2.setCursor(8,13);
+//          u8g2.print(F("Up_Step Frist"));
+//          u8g2.sendBuffer();
+//          while(digitalRead(kButtonPin) != 0);  // 
+//            sound();
+//            calval = readir();
+//            calVoltage(calval);
+//              sound();
+//              u8g2.clearBuffer();   
+//              u8g2.setCursor(8,13);
+//              u8g2.print(F("Up_Step Second"));
+//              u8g2.sendBuffer();
+//              while(digitalRead(kButtonPin) != 0);  //           
+//                sound();
+//                u8g2.clearBuffer();
+//                u8g2.setCursor(0,13);
+//                u8g2.print(F("choose 7 to up"));        
+//                u8g2.setCursor(0,38);
+//                u8g2.print(F("choose 8 to down"));
+//                u8g2.setCursor(0,64);
+//                u8g2.print(F("choose 9 to exit"));
+//                u8g2.sendBuffer();
+//                delay(500);
+//                  n = readir();
+//                    if( n == 7 || n == 8)
+//                      key = n;
+//                    else 
+//                      key = 9;                    
+//            break;
+//            
+//        case 8:
+//          u8g2.clearBuffer();
+//          u8g2.setCursor(0,13);
+//          u8g2.print(F("Down_Step"));
+//          u8g2.sendBuffer();
+//          calval = 0 - readir();
+//          calVoltage(calval);
+//            sound();
+//            u8g2.clearBuffer(); 
+//            u8g2.setCursor(0,13);
+//            u8g2.print(F("Down_Step Frist"));
+//            u8g2.sendBuffer();
+//            while(digitalRead(kButtonPin) != 0);
+//              sound();
+//              calval = 0 - readir();
+//              calVoltage(calval);
+//                sound();
+//                u8g2.clearBuffer();
+//                u8g2.setCursor(0,13);
+//                u8g2.print(F("Down_Step Second"));
+//                u8g2.sendBuffer();
+//                while(digitalRead(kButtonPin) != 0);  //           
+//                  sound();
+//                  u8g2.clearBuffer();
+//                  u8g2.setCursor(0,13);
+//                  u8g2.print(F("choose 7 to up"));        
+//                  u8g2.setCursor(0,38);
+//                  u8g2.print(F("choose 8 to down"));
+//                  u8g2.setCursor(0,64);
+//                  u8g2.print(F("choose 9 to exit"));
+//                  u8g2.sendBuffer();
+//                  delay(500);
+//                    n = readir();
+//                      if( n == 7 || n == 8)
+//                        key = n;
+//                      else 
+//                        key = 9;  
+//            break;
             
         case 9:
-            exitFactoryMode();
+          //  exitFactoryMode();
               key = 0;
             break;           
           case 0:
