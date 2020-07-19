@@ -18,9 +18,13 @@ void print_title()
 
 void print_memu()
     {
-              Serial.print(F("\n  1-Basic Commands\n"));
-              Serial.print(F("  2-PMbus Detect\n"));
-              Serial.print(F("  3-Bus Probe\n"));
+              Serial.print(F("\n  1-Read Voltage&Current\n"));
+              Serial.print(F("  2-Read All Sensor\n"));
+              Serial.print(F("  3-Read All Status\n"));
+              Serial.print(F("  4-Set CUBUS\n"));
+
+              Serial.print(F("\n  8-MFR Commands\n"));
+              Serial.print(F("  9-PMbus Detect\n"));
               Serial.print(F("  0-Mai Menu\n"));
               Serial.println(F("\nEnter command:"));
                 delay(500);
@@ -107,23 +111,21 @@ void print_all_volt_curr()
     Serial.print(voltage, 3);
     Serial.print(F("  Current: "));
     Serial.println(current, 2);
-//          temp = pmbus->readOtemp(ps_i2c_address);           //temp sensor 0x8D  
-//          voltage = pmbus->readItemp(ps_i2c_address);        //temp sensor 0x8E  
-//          current = pmbus->readtemp3(ps_i2c_address);        //temp sensor 0x8F  
-//          u8g2.setCursor(0,30);
-//          u8g2.print(F("8D "));
-//          u8g2.print(temp, 0);
-//          u8g2.setCursor(42,30);
-//          u8g2.print(F("8E "));
-//          u8g2.print(voltage, 0);
-//          u8g2.setCursor(84,30);
-//          u8g2.print(F("8F "));
-//          u8g2.print(current, 0);
-//          temp = pmbus->readFanSpeed1(ps_i2c_address);
-//           u8g2.setCursor(0,40);
-//           u8g2.print(F("Fan1 Speed  "));
-//           u8g2.print(temp, 1);
-     w_val = pmbus->readStatusWord(ps_i2c_address);
+          temp = pmbus->readOtemp(ps_i2c_address);           //temp sensor 0x8D  
+          voltage = pmbus->readItemp(ps_i2c_address);        //temp sensor 0x8E  
+          current = pmbus->readtemp3(ps_i2c_address);        //temp sensor 0x8F  
+          Serial.print(F("Temp 8D: "));
+          Serial.print(temp, 1);
+          Serial.print(F("  Temp 8E: "));
+          Serial.print(voltage, 1);
+          Serial.print(F("  Temp 8F: "));
+          Serial.print(current, 1);
+          
+          temp = pmbus->readFanSpeed1(ps_i2c_address);
+          Serial.print(F("  Fan1 Speed: "));
+          Serial.print(temp, 1);
+
+    w_val = pmbus->readStatusWord(ps_i2c_address);
     Serial.print(F("STATUS WORD 0x"));
     Serial.println(w_val, HEX);
     printBits((w_val & 0xFF));
