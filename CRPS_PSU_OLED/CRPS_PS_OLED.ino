@@ -41,7 +41,7 @@ modification, are permitted provided that the following conditions are met:
 #include <IRremote.h>
 
 #define IRPIN 22                     //Nano board pin D22
-#define PS_I2C_ADDRESS 0x58         // PMbus Power Supply address
+#define PS_I2C_ADDRESS 0x58         // PMbus Power Supply address 0x58/B0;
 #define PS_PARTNER_ADDRESS 0x5F
 IRrecv irrecv(IRPIN);
 decode_results results;
@@ -109,20 +109,20 @@ void loop()
       
       case 2:
 
-      displaycurrent();
-     while(digitalRead(kButtonPin) != 0);
-     sound();
-     delay(500); 
-     setCrbus();
-     while(digitalRead(kButtonPin) != 0);
-     sound();
-     delay(500); 
-      displaycurrent();
-     while(digitalRead(kButtonPin) != 0);
-     sound();
-     delay(500); 
-     key = 0;
-     // print_all_status();
+//      displaycurrent();
+//     while(digitalRead(kButtonPin) != 0);
+//     sound();
+//     delay(500); 
+//     setCrbus();
+//     while(digitalRead(kButtonPin) != 0);
+//     sound();
+//     delay(500); 
+//      displaycurrent();
+//     while(digitalRead(kButtonPin) != 0);
+//     sound();
+//     delay(500); 
+//     key = 0;
+      print_all_status();
         break;
                
       case 3:
