@@ -1,9 +1,9 @@
 void print_title()
 {
   Serial.print(F("\n*****************************************\n"));
-  Serial.print(F("* PSU     PMbus control demo        *\n"));
+  Serial.print(F("* PSU_CRPS   PMbus control demo        *\n"));
   Serial.print(F("* This program demonstrates how to sent *\n"));
-  Serial.print(F("* and receive data form PSU      *\n"));
+  Serial.print(F("* and receive data form  PSU      *\n"));
   Serial.print(F("*****************************************\n"));
 }
 
@@ -23,7 +23,7 @@ void print_memu()
               delay(500);
     }
 
-void menu_commands(){
+void mfr_menu_commands(){
         uint8_t user_command;
         
   do{  
@@ -34,8 +34,8 @@ void menu_commands(){
 //    Serial.print(F("  5-Margin High\n"));
 //    Serial.print(F("  6-Margin Low\n"));
 //    Serial.print(F("  7-Margin Off\n"));
-    Serial.print(F("  8-Set \n"));
-    Serial.print(F("  9-Set \n"));
+    Serial.print(F("  8-Set Customized \n"));
+    Serial.print(F("  9-Set Customized \n"));
     Serial.print(F("  m-Main Menu\n"));
     Serial.print(F("\nEnter a command: "));
   
@@ -175,26 +175,145 @@ void print_all_volt_curr()
 void print_all_status()
 {
     uint16_t w_val;
-    uint8_t io,in,tm,fa,vo;
-        w_val = pmbus->readStatusWord(ps_i2c_address);
+    uint8_t msb,lsb,io,in,tm,fa,vo;
+     Serial.println(F("========= READ ALL STATUS =========="));
+     Serial.println(F(" "));
+      w_val = pmbus->readStatusWord(ps_i2c_address);
      Serial.print(F("STATUS WORD 0x"));
     Serial.println(w_val, HEX);
-    printBits((w_val & 0xFF));
-     Serial.print(F(" LOW: "));
-     Serial.println((w_val & 0xFF), HEX);
-     printBits((w_val >> 8));
-     Serial.print(F(" HIGH:"));
-     Serial.println((w_val >> 8), HEX);
-      io = pmbus -> readStatusIout(ps_i2c_address);
-     Serial.print(F("STATUS_IOUT "));
-      printBits(io);
-     Serial.print(F("  HEX: "));
-     Serial.println(io, HEX);
-//      in = pmbus -> readStatusInput(ps_i2c_address);
-//      tm = pmbus -> readStatusTemp(ps_i2c_address);
-//      fa = pmbus -> readStatusFan(ps_i2c_address);
-//      vo = pmbus -> readStatusVout(ps_i2c_address);
+    msb = w_val >> 8;
+    lsb = w_val & 0xFF;
+    Serial.print(F(" 0B "));
+    printBits(msb);
+    Serial.print(F("  HIGH: 0x"));
+    Serial.print(msb, HEX);
 
+    Serial.print(F("     0B "));
+    printBits(lsb);
+    Serial.print(F("   LOW: 0x"));
+    Serial.println(lsb, HEX);
+    if(msb & 0x80){
+        vo = pmbus -> readStatusVout(ps_i2c_address);
+        Serial.print(F("STATUS_VOUT 0B "));
+        printBits(vo);
+        Serial.print(F("    : 0x"));
+        Serial.println(vo, HEX);
+        if(vo & 0x80)
+        Serial.println(F("STATUS_VOUT_OV_FAULT !! "));
+        if(vo & 0x10)
+        Serial.println(F("STATUS_VOUT_UV_FAULT !! "));
+     
+    }
+
+    if(msb & 0x40){
+        io = pmbus -> readStatusIout(ps_i2c_address);
+        Serial.print(F("STATUS_IOUT 0B "));
+        printBits(io);
+        Serial.print(F("    : 0x"));
+        Serial.println(io, HEX);
+        if(io & 0x80)
+        Serial.println(F("STATUS_IOUT_OC_FAULT !! "));
+        if(io & 0x20)
+        Serial.println(F("STATUS_IOUT_OC_WARNING !! "));
+        if(io & 0x02)
+        Serial.println(F("STATUS_POUT_OP_FAULT !! "));
+        if(io & 0x01)
+        Serial.println(F("STATUS_POUT_OP_WARNING !! ")); 
+    }
+
+    if(msb & 0x20){
+        in = pmbus -> readStatusInput(ps_i2c_address);
+        Serial.print(F("STATUS_INPUT 0B "));
+        printBits(in);
+        Serial.print(F("    : 0x"));
+        Serial.println(in, HEX);
+        if(in & 0x20)
+        Serial.println(F("STATUS_VIN_UV_WARNING !! "));
+        if(in & 0x10)
+        Serial.println(F("STATUS_VIN_UV_FAULT !! "));
+        if(in & 0x08)
+        Serial.println(F("STATUS_UNIT_OFF_FOR_INSUFFICIENT_INPUT !! "));
+        if(in & 0x02)
+        Serial.println(F("STATUS_IIN_OVER_CURRENT_WARNING !! ")); 
+        if(in & 0x01)
+        Serial.println(F("STATUS_PIN_OVER_POWER_WARNING !! ")); 
+    }
+
+    if (msb & 0x08)
+    Serial.println(F("STATUS_POWER_GOOD#_FAULT !! "));
+
+    if(msb & 0x04){
+      fa = pmbus -> readStatusFan(ps_i2c_address);
+        Serial.print(F("STATUS_FAN 0B "));
+        printBits(fa);
+        Serial.print(F("    : 0x"));
+        Serial.println(fa, HEX);
+        if(fa & 0x80)
+        Serial.println(F("STATUS_FAN_1_FAULT !! "));
+        if(fa & 0x40)
+        Serial.println(F("STATUS_FAN_2_FAULT !! "));
+        if(fa & 0x20)
+        Serial.println(F("STATUS_FAN_1_WARNING !! "));
+        if(fa & 0x10)
+        Serial.println(F("STATUS_FAN_1_WARNING !! "));
+
+    }
+
+    if(lsb & 0x40)
+    Serial.println(F("STATUS_PS_OFF !! "));
+
+    if(lsb & 0x10){
+        io = pmbus -> readStatusIout(ps_i2c_address);
+        Serial.print(F("STATUS_IOUT 0B "));
+        printBits(io);
+        Serial.print(F("    : 0x"));
+        Serial.println(io, HEX);
+        if(io & 0x80)
+        Serial.println(F("STATUS_IOUT_OC_FAULT !! "));
+        if(io & 0x20)
+        Serial.println(F("STATUS_IOUT_OC_WARNING !! "));
+        if(io & 0x02)
+        Serial.println(F("STATUS_POUT_OP_FAULT !! "));
+        if(io & 0x01)
+        Serial.println(F("STATUS_POUT_OP_WARNING !! ")); 
+
+    }
+    
+    if(lsb & 0x08){
+        in = pmbus -> readStatusInput(ps_i2c_address);
+        Serial.print(F("STATUS_INPUT 0B "));
+        printBits(in);
+        Serial.print(F("    : 0x"));
+        Serial.println(in, HEX);
+        if(in & 0x20)
+        Serial.println(F("STATUS_VIN_UV_WARNING !! "));
+        if(in & 0x10)
+        Serial.println(F("STATUS_VIN_UV_FAULT !! "));
+        if(in & 0x08)
+        Serial.println(F("STATUS_UNIT_OFF_FOR_INSUFFICIENT_INPUT !! "));
+        if(in & 0x02)
+        Serial.println(F("STATUS_IIN_OVER_CURRENT_WARNING !! ")); 
+        if(in & 0x01)
+        Serial.println(F("STATUS_PIN_OVER_POWER_WARNING !! ")); 
+
+    }
+
+    if(lsb & 0x04){
+        tm = pmbus -> readStatusTemp(ps_i2c_address);
+        Serial.print(F("STATUS_TEMPERATURE 0B "));
+        printBits(tm);
+        Serial.print(F("    : 0x"));
+        Serial.println(tm, HEX);
+        if(tm & 0x80)
+        Serial.println(F("STATUS_OT_FAULT !! "));
+        if(tm & 0x40)
+        Serial.println(F("STATUS_OT_WARNING !! "));
+    }
+
+    if(lsb & 0x02)
+    Serial.println(F("STATUS_CML_FAULT !! "));
+
+    Serial.println(F(" "));
 }
 
 void print_all_sensors()
@@ -244,30 +363,12 @@ void alarm(){
         }
 }
 
-void displayPecOn(){
-  
-      Serial.println(F("PEC On"));
-}
-void displayPecOff(){
-      Serial.println(F("PEC Off"));
-}
-
 float readeout(){
   uint8_t data[6];
  // unsigned int m,b,r;
   unsigned long maxValue,lastEnergyCount,lastSampleCount,currentEnergyCount,currentSampleCount;
   float eoutResult;
 //  smbus -> readBlock(ps_i2c_address, 0x30, data, 5);
-//        u8g2.clearBuffer();
-//        u8g2.setCursor(0,10);
-//        u8g2.print(F("Data "));
-//        u8g2.print(data[0],HEX);
-//        u8g2.print(data[1],HEX);
-//        u8g2.print(data[2],HEX);
-//        u8g2.print(data[3],HEX);
-//        u8g2.print(data[4],HEX);
-//        u8g2.sendBuffer();
-//        delay(2000);
 //      m = data[1] * 256 + data[0];
 //      b = data[3] * 256 + data[2];
 //      r = data[4];
@@ -298,7 +399,6 @@ void printBits(byte myByte){
 void i2cdetects(uint8_t first, uint8_t last) {
   uint8_t i, address, error;
   char buff[10];
-
   // table header
   Serial.print("   ");
   for (i = 0; i < 16; i++) {

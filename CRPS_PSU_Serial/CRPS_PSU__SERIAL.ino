@@ -21,11 +21,10 @@ modification, are permitted provided that the following conditions are met:
  - Use of the software either in source or binary form, must be run
    on or directly connected to an Analog Devices Inc. component.
 /*! @file
-    @ingroup DC1962
+ * Board ATmega128L;  External 8Mhz@upload baud-rate:38400;
 */
 #include <Arduino.h>
 #include <stdint.h>
-#include <Linduino.h>
 #include <UserInterface.h>
 #include <LT_Wire.h>
 #include <LT_PMBus.h>
@@ -34,7 +33,6 @@ modification, are permitted provided that the following conditions are met:
 #include <LT_SMBus.h>
 #include <LT_I2CBus.h>
 #include <LT_SMBusGroup.h>
-#include <LT_FaultLog.h>
 #include <LT_SMBusNoPec.h>
 #include <LT_SMBusBase.h>
 #include "Wire.h"
@@ -49,6 +47,8 @@ LT_I2CBus i2c_bus;
  //boolean pec = false; 
 const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
+const uint8_t kLedPin = 13;
+
 static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
 static LT_SMBus *smbus = new LT_SMBusNoPec();
@@ -57,28 +57,31 @@ static LT_PMBus *pmbus = new LT_PMBus(smbus);
 void setup()
 {
   pinMode(kButtonPin, INPUT_PULLUP);
-    Serial.begin(38400);              //! Initialize the serial port to the PC 38400
+  pinMode(kLedPin, OUTPUT);
+  Serial.begin(38400);              //! Initialize the serial port to the PC 38400
+  digitalWrite(kLedPin, LOW);  
     print_title();
     ps_i2c_address = PS_I2C_ADDRESS;
     ps_patner_address = PS_PARTNER_ADDRESS;
-        if (pec)
+      if (pec)
         {
          // pmbus->enablePec(ps_i2c_address);
           delete smbus;
           delete pmbus;
           smbus = new LT_SMBusPec();
           pmbus = new LT_PMBus(smbus);
-          displayPecOn();
+          Serial.println(F("PEC On"));
         }
-        else 
+      else 
         {
           //pmbus->disablePec(ps_i2c_address);
           delete smbus;
           delete pmbus;
           smbus = new LT_SMBusNoPec();
           pmbus = new LT_PMBus(smbus);
-          displayPecOff();
-        }
+          Serial.println(F("PEC Off"));
+         }
+        
             print_memu();
             key  = 1;
             uint8_t result;
@@ -86,7 +89,8 @@ void setup()
             {
               Serial.println(F("PMbus is not responding"));
               Serial.print(F("press button to continue"));
-            //  while(digitalRead(kButtonPin) != 0);
+//              digitalWrite(kLedPin, HIGH);
+//              while(digitalRead(kButtonPin) != 0);
             }
             Serial.println(F(" "));
             Serial.print(F("PAGE= "));
@@ -132,6 +136,7 @@ void loop()
           Serial.println(F("Error!! No Crbus patner vailable"));
           Serial.println(F("Press the Button to return Main memu"));
           while(digitalRead(kButtonPin) != 0);
+          sound();
           key = 0;
            break;
           }
@@ -143,12 +148,11 @@ void loop()
         displayCrbusCur();        
         break;            
         case 8:
-          menu_commands();
+         mfr_menu_commands();
           key = 0;
           break;           
         case 9:
-          //  exitFactoryMode();
-              key = 0;
+          key = 0;
             break;           
           case 0:
               print_memu();

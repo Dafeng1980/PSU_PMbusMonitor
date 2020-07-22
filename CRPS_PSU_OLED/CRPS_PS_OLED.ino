@@ -21,12 +21,12 @@ modification, are permitted provided that the following conditions are met:
  - Use of the software either in source or binary form, must be run
    on or directly connected to an Analog Devices Inc. component.
 /*! @file
-    @ingroup DC1962
+ Board ATmega128L;  External 7.3728Mhz@upload baud-rate:115200;
 */
 #include <Arduino.h>
 #include <U8g2lib.h>
 #include <stdint.h>
-#include <Linduino.h>
+//#include <Linduino.h>
 #include <UserInterface.h>
 #include <LT_Wire.h>
 #include <LT_PMBus.h>
@@ -35,7 +35,7 @@ modification, are permitted provided that the following conditions are met:
 #include <LT_SMBus.h>
 #include <LT_I2CBus.h>
 #include <LT_SMBusGroup.h>
-#include <LT_FaultLog.h>
+//#include <LT_FaultLog.h>
 #include <LT_SMBusNoPec.h>
 #include <LT_SMBusBase.h>
 #include <IRremote.h>
