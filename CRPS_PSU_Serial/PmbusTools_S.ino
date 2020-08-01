@@ -60,9 +60,22 @@ void mfr_menu_commands(){
       Serial.println(F(" "));
         break;
       case 2:
+      ucd3138ConfReaAddr();
+      Serial.println(F(" "));
+      Serial.println(F("Configure Read Address at 0x403A0"));
+      Serial.println(F(" "));
+      delay(10);
+      ucd3138Reads();
     //  print_all_sensors();
         break;
       case 3:
+      Serial.println(F(" "));
+      Serial.println(F("Mass Erase the PFlash 0x0000-0x7FFF"));
+      Serial.print(F("press button to continue"));
+      Serial.println(F(" "));
+      while(digitalRead(kButtonPin) != 0);
+      ucd3138MassEraseFlash();
+      sound();
         break;
       case 4:
  
@@ -239,8 +252,7 @@ void print_all_status()
         Serial.println(F("STATUS_PIN_OVER_POWER_WARNING !! ")); 
     }
 
-    if (msb & 0x08)
-    Serial.println(F("STATUS_POWER_GOOD#_FAULT !! "));
+    if (msb & 0x08)  Serial.println(F("STATUS_POWER_GOOD#_FAULT !! "));
 
     if(msb & 0x04){
       fa = pmbus -> readStatusFan(ps_i2c_address);
@@ -259,8 +271,7 @@ void print_all_status()
 
     }
 
-    if(lsb & 0x40)
-    Serial.println(F("STATUS_PS_OFF !! "));
+    if(lsb & 0x40)  Serial.println(F("STATUS_PS_OFF !! "));
 
     if(lsb & 0x10){
         io = pmbus -> readStatusIout(ps_i2c_address);
@@ -437,4 +448,29 @@ void i2cdetects(uint8_t first, uint8_t last) {
     }
   }
   Serial.println("\n");
+}
+
+void printFru(uint8_t first, uint8_t last, uint8_t *values) {
+        int i,address;
+        Serial.print("    ");
+        for (i = 0; i < 16; i++) {
+                Serial.printf("%3x", i);
+//                sprintf(buff, "%3x", i);
+//                Serial.print(buff);
+            }
+        for (address = 0; address <= 255; address++) {   
+          if (address % 16 == 0) {
+//              Serial.printf("\n%#02x:", address & 0xF0);
+                Serial.printf("\n%02xh:", address & 0xF0);
+//              sprintf(buff, "\n%02x:", address & 0xF0);
+//              Serial.print(buff);
+              }
+              
+            if (address >= first && address <= last)
+                Serial.printf(" %02x", values[address]);
+//                sprintf(buff, " %02x", address);
+//                Serial.print(buff);
+           else Serial.print("   ");
+            }
+      Serial.println("\n");
 }
