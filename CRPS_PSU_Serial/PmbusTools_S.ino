@@ -34,8 +34,8 @@ void mfr_menu_commands(){
 //    Serial.print(F("  5-Margin High\n"));
 //    Serial.print(F("  6-Margin Low\n"));
 //    Serial.print(F("  7-Margin Off\n"));
-    Serial.print(F("  8-Set Customized \n"));
-    Serial.print(F("  9-Set Customized \n"));
+    Serial.print(F("  8-Reads UCD3138 Pflash At 0x0407A0 \n"));
+    Serial.print(F("  9-Erase&Write UCD3138 Pflash At 0x040400 \n"));
     Serial.print(F("  m-Main Menu\n"));
     Serial.print(F("\nEnter a command: "));
   
@@ -60,41 +60,46 @@ void mfr_menu_commands(){
       Serial.println(F(" "));
         break;
       case 2:
-      ucd3138ConfReaAddr();
-      Serial.println(F(" "));
-      Serial.println(F("Configure Read Address at 0x403A0"));
-      Serial.println(F(" "));
-      delay(10);
-      ucd3138Reads();
+
     //  print_all_sensors();
         break;
       case 3:
-      Serial.println(F(" "));
-      Serial.println(F("Mass Erase the PFlash 0x0000-0x7FFF"));
-      Serial.print(F("press button to continue"));
-      Serial.println(F(" "));
-      while(digitalRead(kButtonPin) != 0);
-      ucd3138MassEraseFlash();
-      sound();
+
         break;
       case 4:
- 
+      
         break;
       case 5:
-
+      
         break;
       case 6:
 
         break;
       case 7:
-
+      
         break;
+        
       case 8:
-
+        ucd3138ConfReaAddr();
+        Serial.println(F(" "));
+        Serial.println(F("Configure Read Address at 0x407A0"));
+        Serial.println(F(" "));
+        delay(10);
+        ucd3138Reads();
         break;
+        
       case 9:
-
+         Serial.println(F(" "));
+         Serial.println(F("Erase&Write the PFlash 0x040400 For 1K"));
+         Serial.print(F("Press button to continue"));
+          while(digitalRead(kButtonPin) != 0);
+          Serial.println(F(" "));
+          ucd3138PageEraseFlash();
+          delay(100);
+          ucd3138Write1k();
+          sound();
         break;
+        
       default:
         if (user_command != 'm')
           Serial.println(F("Invalid Selection"));
