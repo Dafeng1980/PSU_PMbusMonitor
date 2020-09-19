@@ -80,54 +80,27 @@ void ucd3138ReadNex16B(uint8_t *data)
 void ucd3138Reads()
       {
         uint8_t data[16];
-        uint8_t data1[16];
-        uint8_t data2[16];
-        uint8_t data3[16];
-        uint8_t data4[16];
-        uint8_t data5[16];
-        uint8_t var[96];
-        ucd3138ReadNex16B(data);
-        ucd3138ReadNex16B(data1);
-        ucd3138ReadNex16B(data2);
-        ucd3138ReadNex16B(data3);
-        ucd3138ReadNex16B(data4);
-        ucd3138ReadNex16B(data5);
+        uint8_t var[256];
         
-        for ( int i = 0; i<16; i++)
+        for ( int j = 0; j < 16; j++)
             {
-              var[i] = data[i];
-            }
-          for ( int i = 0; i<16; i++)
-            {
-              var[i+16] = data1[i];
-            }
-                for ( int i = 0; i<16; i++)
-            {
-              var[i+32] = data2[i];
-            }
-                for ( int i = 0; i<16; i++)
-            {
-              var[i+48] = data3[i];
-            }
-                for ( int i = 0; i<16; i++)
-            {
-              var[i+64] = data4[i];
-            }
-                for ( int i = 0; i<16; i++)
-            {
-              var[i+80] = data5[i];
-            }
-          printFru(0,95,var);
+              ucd3138ReadNex16B(data);
+              for( int i = 0; i < 16; i++)
+                 {
+                    var[i+j*16] = data[i];
+                  }
+              }
+          printFru(0,255,var);
       }
 
-void ucd3138ConfReaAddr()
+void ucd3138ConfReaAddr(unsigned long address)
       {
         uint8_t data[4];
-        data[0] = 0x00;
-        data[1] = 0x04;
-        data[2] = 0x07;
-        data[3] = 0xA0;
-        smbus->writeBlock(0x0B, 0xFD, data, 4); 
+          data[0] = (address >> 24) & 0xff;
+          data[1] = (address >> 16) & 0xffff;
+          data[2] = (address >> 8) & 0xffffff;
+          data[3] = address & 0xff;
+          smbus->writeBlock(0x0B, 0xFD, data, 4); 
       }
 
 void ucd3138MassEraseFlash()
@@ -185,17 +158,17 @@ void ucd3138Write1k()
           Serial.println("Program Flash Success!");       
       }
         
-void ucd3138Write4Byte(unsigned long address, uint8_t *val)
+void ucd3138Write4Byte(unsigned long address, unsigned long val)
         {
           uint8_t data[8];
           data[0] = (address >> 24) & 0xff;
           data[1] = (address >> 16) & 0xffff;
           data[2] = (address >> 8) & 0xffffff;
           data[3] = address & 0xff;
-          data[4] = val[0];
-          data[5] = val[1];
-          data[6] = val[2];
-          data[7] = val[3];
+          data[4] = (val >> 24) & 0xff;
+          data[5] = (val >> 16) & 0xffff;
+          data[6] = (val >> 8) & 0xffffff;
+          data[7] = val & 0xff;
           smbus->writeBlock(0x0B, 0xF5, data, 8);
          }
          

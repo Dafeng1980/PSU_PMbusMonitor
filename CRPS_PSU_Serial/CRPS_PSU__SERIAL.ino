@@ -38,7 +38,7 @@ modification, are permitted provided that the following conditions are met:
 #include "Wire.h"
 
 #define PS_I2C_ADDRESS 0x58         // PMbus Power Supply address 0x58/B0;
-#define PS_PARTNER_ADDRESS 0x5F
+#define PS_PARTNER_ADDRESS 0x59
 
 LT_I2CBus i2c_bus;
 
@@ -123,7 +123,7 @@ void loop()
       break;
 
       case 4:
-        
+       iOutFan(); 
       break;
 
        case 5:

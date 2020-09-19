@@ -1,3 +1,5 @@
+#define RAEDADDR 0x00040700
+
 void print_title()
 {
   Serial.print(F("\n*****************************************\n"));
@@ -30,11 +32,11 @@ void mfr_menu_commands(){
     Serial.print(F("  1-Read MFR Info \n"));
     Serial.print(F("  2-Read MFR FW REVISION\n"));
     Serial.print(F("  3-Read MFR_BLACKBOX\n"));
-//    Serial.print(F("  4-Sequence Off/On\n"));
+    Serial.print(F("  4-Clear the 05&06 Cal \n"));
 //    Serial.print(F("  5-Margin High\n"));
 //    Serial.print(F("  6-Margin Low\n"));
 //    Serial.print(F("  7-Margin Off\n"));
-    Serial.print(F("  8-Reads UCD3138 Pflash At 0x0407A0 \n"));
+    Serial.print(F("  8-Reads UCD3138 Pflash At READADDR \n"));
     Serial.print(F("  9-Erase&Write UCD3138 Pflash At 0x040400 \n"));
     Serial.print(F("  m-Main Menu\n"));
     Serial.print(F("\nEnter a command: "));
@@ -60,14 +62,21 @@ void mfr_menu_commands(){
       Serial.println(F(" "));
         break;
       case 2:
-
     //  print_all_sensors();
         break;
       case 3:
 
         break;
       case 4:
-      
+//       Serial.println(F(" "));
+//       Serial.println(F("Clear the 05&06 Cal "));
+//       Serial.print(F("Press button to continue"));
+//       while(digitalRead(kButtonPin) != 0);
+//       factoryMode();
+//       reset05_06Cal();
+//       Serial.println(F("Reset OK "));
+//       exitFactoryMode(); 
+        Serial.println(F("No Test "));      
         break;
       case 5:
       
@@ -80,9 +89,10 @@ void mfr_menu_commands(){
         break;
         
       case 8:
-        ucd3138ConfReaAddr();
+        ucd3138ConfReaAddr(RAEDADDR);
         Serial.println(F(" "));
-        Serial.println(F("Configure Read Address at 0x407A0"));
+        Serial.print(F("Configure Read Address at : 0x"));
+        Serial.println(RAEDADDR, HEX);
         Serial.println(F(" "));
         delay(10);
         ucd3138Reads();
@@ -133,17 +143,16 @@ void print_all_volt_curr()
     Serial.print(F("     Cur: "));
     Serial.print(current, 2);
     Serial.println(F("A"));
-    pmbus->setPage(ps_i2c_address,1);    //set Page to 1, read 12Vsb 
-    voltage = pmbus->readVout(ps_i2c_address, false);
-    current = pmbus->readIout(ps_i2c_address, false);
-    Serial.print(F("12Vsb_Vol: "));
-    Serial.print(voltage, 3);
-    Serial.print(F("V"));
-    Serial.print(F("     Cur: "));
-    Serial.print(current, 2);
-    Serial.println(F("A"));
-    pmbus->setPage(ps_i2c_address,0);
-    
+//    pmbus->setPage(ps_i2c_address,1);    //set Page to 1, read 12Vsb 
+//    voltage = pmbus->readVout(ps_i2c_address, false);
+//    current = pmbus->readIout(ps_i2c_address, false);
+//    Serial.print(F("12Vsb_Vol: "));
+//    Serial.print(voltage, 3);
+//    Serial.print(F("V"));
+//    Serial.print(F("     Cur: "));
+//    Serial.print(current, 2);
+//    Serial.println(F("A"));
+//    pmbus->setPage(ps_i2c_address,0);    
     voltage = pmbus->readPin(ps_i2c_address, false);
     current = pmbus->readPout(ps_i2c_address, false);
     Serial.print(F("Pin: "));
@@ -479,3 +488,18 @@ void printFru(uint8_t first, uint8_t last, uint8_t *values) {
             }
       Serial.println("\n");
 }
+
+void iOutFan()
+        {
+           float fspeed, current;
+            current = pmbus->readIout(ps_i2c_address, false);
+            fspeed = pmbus->readFanSpeed1(ps_i2c_address);
+            Serial.print(F("Fan1 Speed:  "));
+            Serial.print(fspeed, 0);
+            Serial.println(F(" rpm"));
+            Serial.println(F(" ")); 
+            Serial.print(F("IOUT: "));
+            Serial.print(current, 2);
+            Serial.println(F("A")); 
+            Serial.println(F(" "));        
+        }
