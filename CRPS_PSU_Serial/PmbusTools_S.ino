@@ -1,4 +1,4 @@
-#define RAEDADDR 0x00040700
+#define RAEDADDR 0x07C0
 
 void print_title()
 {
@@ -34,10 +34,10 @@ void mfr_menu_commands(){
     Serial.print(F("  3-Read MFR_BLACKBOX\n"));
     Serial.print(F("  4-Clear the 05&06 Cal \n"));
 //    Serial.print(F("  5-Margin High\n"));
-//    Serial.print(F("  6-Margin Low\n"));
-//    Serial.print(F("  7-Margin Off\n"));
-    Serial.print(F("  8-Reads UCD3138 Pflash At READADDR \n"));
-    Serial.print(F("  9-Erase&Write UCD3138 Pflash At 0x040400 \n"));
+    Serial.print(F("  6-Margin Low\n"));
+    Serial.print(F("  7-Mass Erase the PFlash\n"));
+    Serial.print(F("  8-Reads UCD3138 Pflash At 2k Checksum \n"));
+    Serial.print(F("  9-Erase&Write UCD3138 Pflash At 2k Checksum \n"));
     Serial.print(F("  m-Main Menu\n"));
     Serial.print(F("\nEnter a command: "));
   
@@ -79,13 +79,38 @@ void mfr_menu_commands(){
         Serial.println(F("No Test "));      
         break;
       case 5:
-      
-        break;
-      case 6:
 
+      break;
+      
+      case 6:
+         Serial.println(F(" "));
+         Serial.println(F("Erase the PFlash Customize For 1K"));
+         Serial.print(F("Press button to continue"));
+         while(digitalRead(kButtonPin) != 0);
+         Serial.println(F(" "));
+        //  for( int i = 3; i<31; i++)
+        //  {
+        //   ucd3138PageEraseFlashCus(i);
+        //  }
+        // // ucd3138PageEraseFlashCus(7);
+          ucd3138FlashDisplay(0x2000);
+          Serial.println(F(" "));
+          buzzing();
+          ucd3138FlashDisplay(0x8000);
+          Serial.println(F(" "));
+          buzzing();
+          ucd3138FlashDisplay(0xC000);
+          Serial.println(F(" "));
+          buzzing();
         break;
       case 7:
-      
+        Serial.println(F(" "));
+        Serial.println(F("Mass Erase the PFlash 0x048000 to 0x04FFFF For 32K"));
+        Serial.print(F("Press button to continue"));
+        while(digitalRead(kButtonPin) != 0);
+        Serial.println(F(" "));
+//         ucd3138MassEraseFlash(); 
+         buzzing();     
         break;
         
       case 8:
@@ -107,7 +132,7 @@ void mfr_menu_commands(){
           ucd3138PageEraseFlash();
           delay(100);
           ucd3138Write1k();
-          sound();
+          buzzing();
         break;
         
       default:
@@ -373,9 +398,9 @@ void print_all_sensors()
                              Serial.println(F(" "));
           }
 
-void sound(){
-         tone(kBuzzerPin, 2100);
-          delay(100);
+void buzzing(){
+         tone(kBuzzerPin, 2200);
+          delay(50);
            noTone(kBuzzerPin);
     }
 
@@ -434,7 +459,7 @@ void i2cdetects(uint8_t first, uint8_t last) {
 
   // table body
   // addresses 0x00 through 0x77
-  for (address = 0; address <= 119; address++) {
+  for (address = 0; address <= 127; address++) {
     if (address % 16 == 0) {
       //Serial.printf("\n%#02x:", address & 0xF0);
       sprintf(buff, "\n%02x:", address & 0xF0);

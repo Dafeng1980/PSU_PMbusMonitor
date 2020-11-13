@@ -127,7 +127,7 @@ void loop()
       break;
 
        case 5:
-        i2cdetects(0x03, 0x77);
+        i2cdetects(0x03, 0x7F);
         break;
 
       case 6:
@@ -136,7 +136,7 @@ void loop()
           Serial.println(F("Error!! No Crbus patner vailable"));
           Serial.println(F("Press the Button to return Main memu"));
           while(digitalRead(kButtonPin) != 0);
-          sound();
+          buzzing();
           key = 0;
            break;
           }
@@ -170,7 +170,7 @@ void checkButton(){
   if (digitalRead(kButtonPin) == 0){
     delay(10);
     if(digitalRead(kButtonPin) == 0){
-      sound();
+      buzzing();
       key = 0;
     }
   }

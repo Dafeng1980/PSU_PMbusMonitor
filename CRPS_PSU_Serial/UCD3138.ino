@@ -93,19 +93,21 @@ void ucd3138Reads()
           printFru(0,255,var);
       }
 
-void ucd3138ConfReaAddr(unsigned long address)
+void ucd3138ConfReaAddr(unsigned int address)
       {
         uint8_t data[4];
-          data[0] = (address >> 24) & 0xff;
-          data[1] = (address >> 16) & 0xffff;
-          data[2] = (address >> 8) & 0xffffff;
+//          data[0] = (address >> 24) & 0xff;
+//          data[1] = (address >> 16) & 0xffff;
+          data[0] = 0x00;
+          data[1] = 0x04;
+          data[2] = (address >> 8) & 0xffff;
           data[3] = address & 0xff;
           smbus->writeBlock(0x0B, 0xFD, data, 4); 
       }
 
 void ucd3138MassEraseFlash()
      {
-        smbus -> writeByte(0x0B, 0xF2, 0x01); //Erase flashP block0 32k
+        smbus -> writeByte(0x0B, 0xF2, 0x02); //Erase flashP block1 32k(0x8000 - 0xFFFF)
         delay(30);
       }
       
@@ -115,7 +117,15 @@ void ucd3138PageEraseFlash()
           smbus->writeBlock(0x0B, 0xF1, data, 4);  //Erase flashP block0 page1 1k
           delay(30);
         }
-    
+
+void ucd3138PageEraseFlashCus(uint8_t val)
+        {
+          uint8_t data[4] = {0x01,0x00,0x00,0x00};
+          data[1] = val;
+          smbus->writeBlock(0x0B, 0xF1, data, 4);  //Erase flashP block0 page1 1k
+          delay(50);
+        }
+
 void ucd3138Write16Byte(unsigned long address)
         {   
             uint8_t buf[20];
@@ -151,7 +161,7 @@ void ucd3138Write1k()
                      buff[j] = pgm_read_byte_near(boot_1k + (16*i+j));
                    }
                ucd3138WriteNext16(buff);
-               delay(3);
+               delay(5);
                Serial.print(".");
               }
           Serial.println(".");
@@ -172,3 +182,15 @@ void ucd3138Write4Byte(unsigned long address, unsigned long val)
           smbus->writeBlock(0x0B, 0xF5, data, 8);
          }
          
+void ucd3138FlashDisplay (unsigned int address)
+      {
+        ucd3138ConfReaAddr(address);
+        Serial.println(F(" "));
+        Serial.print(F("Configure Read Address at : 0x"));
+        Serial.println(address, HEX);
+        Serial.println(F(" "));
+        delay(10);
+        ucd3138Reads();
+        Serial.println(F(" ")); 
+      }
+     
