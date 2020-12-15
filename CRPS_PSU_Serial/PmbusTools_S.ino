@@ -14,6 +14,7 @@ void print_memu()
               Serial.print(F("\n  1-Read Voltage&Current\n"));
               Serial.print(F("  2-Read All Sensor\n"));
               Serial.print(F("  3-Read All Status\n"));
+              Serial.print(F("  4-setFanFullSpeed\n"));
 
               Serial.print(F("  5-i2c_PMbus Detect\n"));
               Serial.print(F("  6-Set CRbus Mode\n"));
@@ -30,7 +31,7 @@ void mfr_menu_commands(){
         
   do{  
     Serial.print(F("  1-Read MFR Info \n"));
-    Serial.print(F("  2-Read MFR FW REVISION\n"));
+    Serial.print(F("  2-Read MFR CSU2000ADC FW REVISION\n"));
     Serial.print(F("  3-Read MFR_BLACKBOX\n"));
     Serial.print(F("  4-Clear the 05&06 Cal \n"));
 //    Serial.print(F("  5-Margin High\n"));
@@ -58,14 +59,15 @@ void mfr_menu_commands(){
       getLocation();
       getDate();
       getSerial();
-      getFwRev();
+ //     getFwRev();
       Serial.println(F(" "));
         break;
       case 2:
+      getCsu2000AdcFwRev();
     //  print_all_sensors();
         break;
       case 3:
-
+      setFanFullSpeed();
         break;
       case 4:
 //       Serial.println(F(" "));
@@ -84,22 +86,16 @@ void mfr_menu_commands(){
       
       case 6:
          Serial.println(F(" "));
-         Serial.println(F("Erase the PFlash Customize For 1K"));
+         Serial.println(F("Display the PFlash checksum_"));
          Serial.print(F("Press button to continue"));
-         while(digitalRead(kButtonPin) != 0);
          Serial.println(F(" "));
-        //  for( int i = 3; i<31; i++)
-        //  {
-        //   ucd3138PageEraseFlashCus(i);
-        //  }
-        // // ucd3138PageEraseFlashCus(7);
-          ucd3138FlashDisplay(0x2000);
+          ucd3138FlashDisplay(0x07A0);
           Serial.println(F(" "));
           buzzing();
-          ucd3138FlashDisplay(0x8000);
+          ucd3138FlashDisplay(0x7FA0);
           Serial.println(F(" "));
           buzzing();
-          ucd3138FlashDisplay(0xC000);
+          ucd3138FlashDisplay(0xFF00);
           Serial.println(F(" "));
           buzzing();
         break;
@@ -110,6 +106,11 @@ void mfr_menu_commands(){
         while(digitalRead(kButtonPin) != 0);
         Serial.println(F(" "));
 //         ucd3138MassEraseFlash(); 
+        //  for( int i = 3; i<31; i++)
+        //  {
+        //   ucd3138PageEraseFlashCus(i);
+        //  }
+        // // ucd3138PageEraseFlashCus(7);
          buzzing();     
         break;
         
@@ -129,10 +130,10 @@ void mfr_menu_commands(){
          Serial.print(F("Press button to continue"));
           while(digitalRead(kButtonPin) != 0);
           Serial.println(F(" "));
-          ucd3138PageEraseFlash();
-          delay(100);
-          ucd3138Write1k();
-          buzzing();
+//          ucd3138PageEraseFlash();
+//          delay(100);
+//          ucd3138Write1k();
+//          buzzing();
         break;
         
       default:
@@ -144,94 +145,78 @@ void mfr_menu_commands(){
   while (user_command != 'm');
 }
 
-void print_all_volt_curr()
+void printpmbusData(struct PowerPmbus busData)
 {
-  uint16_t w_val;
-  float   current,voltage,temp;
-     voltage = pmbus->readVin(ps_i2c_address, false);
-     current = pmbus->readIin(ps_i2c_address, false);
     Serial.println(F("INPUT: "));
-    Serial.print(F("Vol : "));
-    Serial.print(voltage, 2);
+    Serial.print(F("Volt : "));
+    Serial.print(busData.inputV, 2);
     Serial.print(F("V"));
-    Serial.print(F("     Cur : "));
-    Serial.print(current, 2);
+    Serial.print(F("     Curr : "));
+    Serial.print(busData.inputA, 3);
     Serial.println(F("A"));
     Serial.println(F(" "));
-    voltage = pmbus->readVout(ps_i2c_address, false);
-    current = pmbus->readIout(ps_i2c_address, false);
-    //Serial.println(F(" "));
     Serial.println(F("OUTPUT: "));
-    Serial.print(F("  12V_Vol: "));
-    Serial.print(voltage, 3);
+    
+    Serial.print(F("Vmain_Volt: "));
+    Serial.print(busData.outputV, 3);
     Serial.print(F("V"));
-    Serial.print(F("     Cur: "));
-    Serial.print(current, 2);
+    Serial.print(F("    Curr: "));
+    Serial.print(busData.outputA, 3);
     Serial.println(F("A"));
-//    pmbus->setPage(ps_i2c_address,1);    //set Page to 1, read 12Vsb 
-//    voltage = pmbus->readVout(ps_i2c_address, false);
-//    current = pmbus->readIout(ps_i2c_address, false);
-//    Serial.print(F("12Vsb_Vol: "));
-//    Serial.print(voltage, 3);
-//    Serial.print(F("V"));
-//    Serial.print(F("     Cur: "));
-//    Serial.print(current, 2);
-//    Serial.println(F("A"));
-//    pmbus->setPage(ps_i2c_address,0);    
-    voltage = pmbus->readPin(ps_i2c_address, false);
-    current = pmbus->readPout(ps_i2c_address, false);
+    
+    Serial.print(F("Vsb_Volt: "));
+    Serial.print(busData.outputVsb, 3);
+    Serial.print(F("V"));
+    Serial.print(F("    Sb_Curr: "));
+    Serial.print(busData.outputAsb, 3);
+    Serial.println(F("A"));
+    
     Serial.print(F("Pin: "));
-    Serial.print(voltage, 2);
+    Serial.print(busData.inputP, 2);
     Serial.print(F("W"));
-    Serial.print(F("  Pout: "));
-    Serial.print(current, 2);
+    Serial.print(F("    Pout: "));
+    Serial.print(busData.outputP, 2);
     Serial.println(F("W"));
     Serial.println(F(" "));
-          temp = pmbus->readOtemp(ps_i2c_address);           //temp sensor 0x8D  
-          voltage = pmbus->readItemp(ps_i2c_address);        //temp sensor 0x8E  
-          current = pmbus->readtemp3(ps_i2c_address);        //temp sensor 0x8F  
+    
           Serial.print(F("Temperature   8D: "));
-          Serial.print(temp, 0);
+          Serial.print(busData.temp1, 0);
           Serial.print(F("C"));
           Serial.print(F("    8E: "));
-          Serial.print(voltage, 0);
+          Serial.print(busData.temp2, 0);
           Serial.print(F("C"));
           Serial.print(F("    8F: "));
-          Serial.print(current, 0);
+          Serial.print(busData.temp3, 0);
           Serial.println(F("C"));
-          
-          temp = pmbus->readFanSpeed1(ps_i2c_address);
           Serial.print(F("  Fan1 Speed: "));
-          Serial.print(temp, 1);
+          Serial.print(busData.fanSpeed, 1);
           Serial.println(F(" rpm"));
           Serial.println(F(" "));
-    w_val = pmbus->readStatusWord(ps_i2c_address);
     Serial.print(F("STATUS WORD 0x"));
-    Serial.println(w_val, HEX);
+    Serial.println(busData.statusWord, HEX);
     
     Serial.print(F("  0B "));
-    printBits((w_val & 0xFF));
+    printBits((busData.statusWord & 0xFF));
     Serial.print(F("   LOW: 0x"));
-    Serial.println((w_val & 0xFF), HEX);
+    Serial.println((busData.statusWord & 0xFF), HEX);
 
     Serial.print(F("  0B "));
-    printBits((w_val >> 8));
+    printBits((busData.statusWord >> 8));
     Serial.print(F("   HIGH: 0x"));
-    Serial.println((w_val >> 8), HEX);
+    Serial.println((busData.statusWord >> 8), HEX);
 
-    Serial.println(F(" "));
-    Serial.println(F(" ************ READ ALL ************ "));
+    Serial.println(F(" ************ PMBUS DATA  ************ "));
     Serial.println(F(" "));    
 }
 
-void print_all_status()
+void printpowerStatus()
 {
     uint16_t w_val;
     uint8_t msb,lsb,io,in,tm,fa,vo;
-     Serial.println(F("========= READ ALL STATUS =========="));
-     Serial.println(F(" "));
-      w_val = pmbus->readStatusWord(ps_i2c_address);
-     Serial.print(F("STATUS WORD 0x"));
+    Serial.println(F("========= READ ALL STATUS =========="));
+    Serial.println(F(" "));
+    w_val = pd.statusWord;
+    Serial.print(F("STATUS WORD 0x"));
     Serial.println(w_val, HEX);
     msb = w_val >> 8;
     lsb = w_val & 0xFF;
@@ -239,7 +224,6 @@ void print_all_status()
     printBits(msb);
     Serial.print(F("  HIGH: 0x"));
     Serial.print(msb, HEX);
-
     Serial.print(F("     0B "));
     printBits(lsb);
     Serial.print(F("   LOW: 0x"));
@@ -359,44 +343,42 @@ void print_all_status()
         if(tm & 0x40)
         Serial.println(F("STATUS_OT_WARNING !! "));
     }
-
     if(lsb & 0x02)
     Serial.println(F("STATUS_CML_FAULT !! "));
-
     Serial.println(F(" "));
 }
 
-void print_all_sensors()
+void printpowerSensors()
   {
-      float temp,fspeed;
+      //float temp;
       Serial.println(F("========= READ ALL SENSOR =========="));
       Serial.println(F(" "));
-        temp = pmbus->readOtemp(ps_i2c_address);           //temp sensor 0x8D  Inlet Air
-          Serial.print(F("Inlet Air Temp: "));
-          Serial.print(temp, 0);
-          Serial.println(F(" C"));
-           temp = pmbus->readItemp(ps_i2c_address);            //0x8E Hotspot1 Sensor located on secondary side of DC/DC stage
-            Serial.print(F("DC-DC stage Temp: "));
-            Serial.print(temp, 0);
-            Serial.println(F(" C"));
-              temp = pmbus->readtemp3(ps_i2c_address);          // 0x8F Hotspot2 Sensor located on primary heat sink
-                 Serial.print(F("P-heatsink Temp: "));
-                 Serial.print(temp, 0);
-                 Serial.println(F(" C"));
-                  temp = pmbus->readtemp1(ps_i2c_address);
-                    Serial.print(F("MFR-D3 Temp: "));
-                    Serial.print(temp, 0);
-                    Serial.print(F(" C"));
-                      temp = pmbus->readtemp2(ps_i2c_address);
-                        Serial.print(F("    MFR-D4 Temp: "));
-                        Serial.print(temp, 0);
-                        Serial.println(F(" C"));
-                          fspeed = pmbus->readFanSpeed1(ps_i2c_address);
-                            Serial.print(F("Fan1 Speed:  "));
-                            Serial.print(fspeed, 0);
-                            Serial.println(F(" rpm"));
-                             Serial.println(F(" "));
-          }
+             //temp sensor 0x8D  Inlet Air
+      Serial.print(F("Inlet Air Temp: "));
+      Serial.print(pd.temp1, 0);
+      Serial.println(F(" C"));
+             //0x8E Hotspot1 Sensor located on secondary side of DC/DC stage
+      Serial.print(F("DC-DC stage Temp: "));
+      Serial.print(pd.temp2, 0);
+      Serial.println(F(" C"));
+              // 0x8F Hotspot2 Sensor located on primary heat sink
+      Serial.print(F("P-heatsink Temp: "));
+      Serial.print(pd.temp3, 0);
+      Serial.println(F(" C"));
+//                        temp = pmbus->readtemp1(ps_i2c_address);
+//                        Serial.print(F("MFR-D3 Temp: "));
+//                        Serial.print(temp, 0);
+//                        Serial.print(F(" C"));
+//                        temp = pmbus->readtemp2(ps_i2c_address);
+//                        Serial.print(F("    MFR-D4 Temp: "));
+//                        Serial.print(temp, 0);
+//                        Serial.println(F(" C"));
+//                        
+      Serial.print(F("Fan1 Speed:  "));
+      Serial.print(pd.fanSpeed, 0);
+      Serial.println(F(" rpm"));
+      Serial.println(F(" "));
+    }
 
 void buzzing(){
          tone(kBuzzerPin, 2200);
@@ -516,15 +498,14 @@ void printFru(uint8_t first, uint8_t last, uint8_t *values) {
 
 void iOutFan()
         {
-           float fspeed, current;
-            current = pmbus->readIout(ps_i2c_address, false);
-            fspeed = pmbus->readFanSpeed1(ps_i2c_address);
             Serial.print(F("Fan1 Speed:  "));
-            Serial.print(fspeed, 0);
+            Serial.print(pd.fanSpeed, 0);
             Serial.println(F(" rpm"));
             Serial.println(F(" ")); 
             Serial.print(F("IOUT: "));
-            Serial.print(current, 2);
+            Serial.print(pd.outputA, 2);
             Serial.println(F("A")); 
             Serial.println(F(" "));        
         }
+
+        

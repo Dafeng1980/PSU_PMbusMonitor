@@ -38,10 +38,27 @@ modification, are permitted provided that the following conditions are met:
 #include "Wire.h"
 
 #define PS_I2C_ADDRESS 0x58         // PMbus Power Supply address 0x58/B0;
+//#define PS_I2C_ADDRESS 0x5B 
 #define PS_PARTNER_ADDRESS 0x59
 
 LT_I2CBus i2c_bus;
 
+struct PowerPmbus
+{
+  float inputV;
+  float inputA;
+  float inputP;
+  float outputV;
+  float outputVsb;
+  float outputA;
+  float outputAsb;
+  float outputP;
+  float fanSpeed;
+  float temp1;
+  float temp2;
+  float temp3;
+  uint16_t statusWord;  
+}pd;
  volatile int key;           
  boolean pec = true;        // PEC(Packet Errot Code) support 
  //boolean pec = false; 
@@ -100,6 +117,7 @@ void setup()
 void loop()
 {
 //    int n;
+    readpmbusdata();
     if (Serial.available())                //! Checks for user input
   {
       key = read_int();                     //! Reads the user command
@@ -109,26 +127,34 @@ void loop()
   switch (key)
     {
       case 1:
-     print_all_volt_curr();
-       
-        break;
+      printpmbusData( pd );       
+      break;
       
       case 2:
-      print_all_sensors();
+      printpowerSensors();
       
-        break;
+      break;
                
       case 3:
-      print_all_status();
+      printpowerStatus();
       break;
 
       case 4:
-       iOutFan(); 
-      break;
+       //iOutFan();
+      // setFanFullSpeed();
+       //calibration_data_read();
+      // calibration_write_counter();
+       Serial.println(F("READ_OK"));
+        delay(100);
+        Serial.print(F("Press button to continue"));
+        while(digitalRead(kButtonPin) != 0);
+        Serial.println(F(" "));
+        key = 1;
+       break;
 
        case 5:
         i2cdetects(0x03, 0x7F);
-        break;
+       break;
 
       case 6:
       if(i2c_bus.writeByteData(ps_patner_address, 0x00, 00))  //set Page 0, and check Crbus Patner vailable
@@ -142,9 +168,8 @@ void loop()
           }
         setCrbus(); //set Crbus two PS in 0x01 & 0x02 Mode
         key = 7;    //read two PS share Current 
-        break;
-//                        
-      case 7:
+        break;                       
+        case 7:
         displayCrbusCur();        
         break;            
         case 8:
@@ -174,4 +199,23 @@ void checkButton(){
       key = 0;
     }
   }
+}
+
+void readpmbusdata()
+{
+     pd.inputV = pmbus->readVin(ps_i2c_address, false);
+     pd.inputA = pmbus->readIin(ps_i2c_address, false);
+     pd.outputV = pmbus->readVout(ps_i2c_address, false);
+     pd.outputA = pmbus->readIout(ps_i2c_address, false);
+     pd.inputP = pmbus->readPin(ps_i2c_address, false);
+     pd.outputP = pmbus->readPout(ps_i2c_address, false);
+     pd.temp1 = pmbus->readOtemp(ps_i2c_address);           //temp sensor 0x8D  
+     pd.temp2 = pmbus->readItemp(ps_i2c_address);        //temp sensor 0x8E  
+     pd.temp3 = pmbus->readtemp3(ps_i2c_address);        //temp sensor 0x8F  
+     pd.fanSpeed = pmbus->readFanSpeed1(ps_i2c_address);
+     pd.statusWord = pmbus->readStatusWord(ps_i2c_address); 
+     pmbus->setPage(ps_i2c_address,1);                    //set Page to 1, read 12Vsb 
+     pd.outputVsb = pmbus->readVout(ps_i2c_address, false);
+     pd.outputAsb = pmbus->readIout(ps_i2c_address, false);
+     pmbus->setPage(ps_i2c_address,0);      
 }
