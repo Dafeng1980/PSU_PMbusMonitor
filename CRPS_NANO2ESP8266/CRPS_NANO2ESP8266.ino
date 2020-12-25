@@ -38,8 +38,7 @@ modification, are permitted provided that the following conditions are met:
 #include "Wire.h"
 
 #define PS_I2C_ADDRESS 0x58         // PMbus Power Supply address 0x58/B0;
-//#define PS_I2C_ADDRESS 0x5B 
-#define PS_PARTNER_ADDRESS 0x59
+#define PS_PARTNER_ADDRESS 0x5F
 
 LT_I2CBus i2c_bus;
 
@@ -60,167 +59,50 @@ static struct PowerPmbus
   uint16_t statusWord;
   uint8_t i2cAddr;  
 }pd;
- int key;
- uint8_t n = 0 ;
- long seq = 0;           
- boolean pec = true;        // PEC(Packet Errot Code) support 
- //boolean pec = false; 
- boolean scani2c = true;
-const uint8_t kBuzzerPin = 15;
+        
+//const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
 
 static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
-static LT_SMBus *smbus = new LT_SMBusNoPec();
+static LT_SMBus *smbus = new LT_SMBusPec();
 static LT_PMBus *pmbus = new LT_PMBus(smbus);
-
+uint8_t n = 0 ;
+long seq = 0;
+bool scani2c = true;
 void setup()
 {
   pinMode(kButtonPin, INPUT_PULLUP);
   pinMode(kLedPin, OUTPUT);
   Serial.begin(38400);              //! Initialize the serial port to the PC 38400
-  // Serial1.begin(38400);             //Using the Serial1 port to the ESP8266  
+  Serial1.begin(38400);             //Using the Serial1 port to the ESP8266  
   digitalWrite(kLedPin, LOW);  
-    print_title();
-    ps_i2c_address = PS_I2C_ADDRESS;
-    ps_patner_address = PS_PARTNER_ADDRESS;
-      if (pec)
-        {
-         // pmbus->enablePec(ps_i2c_address);
-          delete smbus;
-          delete pmbus;
-          smbus = new LT_SMBusPec();
-          pmbus = new LT_PMBus(smbus);
-          Serial.println(F("PEC On"));
-        }
-      else 
-        {
-          //pmbus->disablePec(ps_i2c_address);
-          delete smbus;
-          delete pmbus;
-          smbus = new LT_SMBusNoPec();
-          pmbus = new LT_PMBus(smbus);
-          Serial.println(F("PEC Off"));
-         }
-        
-    print_memu();
-
-//            uint8_t result;
-//            if(i2c_bus.readByteData(ps_i2c_address, 0x00, &result))  //read  Page and check PMbus available
-//            {
-//              Serial.println(F("PMbus is not responding"));
-//              Serial.print(F("press button to continue"));
-////              digitalWrite(kLedPin, HIGH);
-////              while(digitalRead(kButtonPin) != 0);
-//            }
-//            Serial.println(F(" "));
-//            Serial.print(F("PAGE= "));
-//            Serial.println(result);
-
- while(scani2c){
-    digitalWrite(kLedPin, HIGH);
-    pmbusdetects();
-    delay(50);
-    digitalWrite(kLedPin, LOW);
-    delay(210);
-    if(n > 0) break;
-    }
-    Serial.printf("\nPMBUSADDRESS %#02x:\n", ps_i2c_address);
-    key  = 1;
+  ps_i2c_address = PS_I2C_ADDRESS;
+//  ps_patner_address = PS_PARTNER_ADDRESS;
+while(scani2c){
+  digitalWrite(kLedPin, HIGH);
+  pmbusdetects();
+  delay(150);
+  digitalWrite(kLedPin, LOW);
+  delay(300);
+  if(n > 0) break;
+}
+Serial.printf("\n%#02x:", ps_i2c_address);
+delay(500);
   }
 
 void loop()
 {
-  if (Serial.available())                //! Checks for user input
-  {
-      key = read_int();                     //! Reads the user command
-      Serial.print("key=");
-      Serial.println(key);
-  }
+
     readpmbusdata();
-    // sent2esp8266();
-
-  switch (key)
-    {
-      case 1:
-      printpmbusData( pd );       
-      break;
-      
-      case 2:
-      printpowerSensors();
-      
-      break;
-               
-      case 3:
-      printpowerStatus();
-      break;
-
-      case 4:
-       //iOutFan();
-      // setFanFullSpeed();
-       //calibration_data_read();
-      // calibration_write_counter();
-       Serial.println(F("READ_OK"));
-        delay(100);
-        Serial.print(F("Press button to continue"));
-        while(digitalRead(kButtonPin) != 0);
-        Serial.println(F(" "));
-        key = 1;
-       break;
-
-       case 5:
-        i2cdetects(0x03, 0x7F);
-       break;
-
-      case 6:
-      if(i2c_bus.writeByteData(ps_patner_address, 0x00, 00))  //set Page 0, and check Crbus Patner vailable
-        {
-          Serial.println(F("Error!! No Crbus patner vailable"));
-          Serial.println(F("Press the Button to return Main memu"));
-          while(digitalRead(kButtonPin) != 0);
-          buzzing();
-          key = 0;
-           break;
-          }
-        setCrbus(); //set Crbus two PS in 0x01 & 0x02 Mode
-        key = 7;    //read two PS share Current 
-        break;                       
-        case 7:
-        displayCrbusCur();        
-        break;            
-        case 8:
-         mfr_menu_commands();
-          key = 0;
-          break;           
-        case 9:
-          key = 0;
-            break;           
-          case 0:
-              print_memu();
-              break;             
-          default:
-              key = 0;
-              break;
-      }
-      
+  
+    printpmbusData(pd);
+//    sent2esp8266();
     if(seq%2) digitalWrite(kLedPin, HIGH);
     seq++;
     delay(1000);
     digitalWrite(kLedPin, LOW);
-    checkButton();
-}
-
-
-void checkButton(){
-
-  if (digitalRead(kButtonPin) == 0){
-    delay(10);
-    if(digitalRead(kButtonPin) == 0){
-      buzzing();
-      key = 0;
-    }
-  }
 }
 
 void sent2esp8266(){
@@ -280,14 +162,12 @@ void pmbusdetects(){
   for (address = 88; address <= 95; address++) {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
-    //  if (address == 92) error = 0;
+     // if (address == 91) error = 0;
       if (error == 0) {
         // device found
         n++;
         if(n == 1) ps_i2c_address = address;
         else ps_i2c_address = PS_I2C_ADDRESS;
-        if(n == 2) ps_patner_address = address;
-        else ps_patner_address = PS_PARTNER_ADDRESS;
         Serial.printf(" %02x", address);       
       } else if (error == 4) {
         // other error
@@ -304,7 +184,7 @@ void pmbusdetects(){
 }
 
 void readpmbusdata()
-{   
+  {
      pd.i2cAddr = ps_i2c_address;
      pd.inputV = pmbus->readVin(ps_i2c_address, false);
      pd.inputA = pmbus->readIin(ps_i2c_address, false);
@@ -322,4 +202,70 @@ void readpmbusdata()
      pd.outputAsb = pmbus->readIout(ps_i2c_address, false);
      pmbus->setPage(ps_i2c_address,0); 
      delay(20);     
+}
+
+void printpmbusData(struct PowerPmbus busData)
+{
+    Serial.print(F("PMBUS ADDRESS: 0x"));
+    Serial.println(busData.i2cAddr, HEX);
+    Serial.println(F("INPUT: "));
+    Serial.print(F("Volt : "));
+    Serial.print(busData.inputV, 2);
+    Serial.print(F("V"));
+    Serial.print(F("     Curr : "));
+    Serial.print(busData.inputA, 3);
+    Serial.println(F("A"));
+    Serial.println(F(" "));
+    Serial.println(F("OUTPUT: "));
+    
+    Serial.print(F("Vmain_Volt: "));
+    Serial.print(busData.outputV, 3);
+    Serial.print(F("V"));
+    Serial.print(F("    Curr: "));
+    Serial.print(busData.outputA, 3);
+    Serial.println(F("A"));
+    
+    Serial.print(F("Vsb_Volt: "));
+    Serial.print(busData.outputVsb, 3);
+    Serial.print(F("V"));
+    Serial.print(F("    Sb_Curr: "));
+    Serial.print(busData.outputAsb, 3);
+    Serial.println(F("A"));
+    
+    Serial.print(F("Pin: "));
+    Serial.print(busData.inputP, 2);
+    Serial.print(F("W"));
+    Serial.print(F("    Pout: "));
+    Serial.print(busData.outputP, 2);
+    Serial.println(F("W"));
+    Serial.println(F(" "));
+    
+          Serial.print(F("Temperature   8D: "));
+          Serial.print(busData.temp1, 0);
+          Serial.print(F("C"));
+          Serial.print(F("    8E: "));
+          Serial.print(busData.temp2, 0);
+          Serial.print(F("C"));
+          Serial.print(F("    8F: "));
+          Serial.print(busData.temp3, 0);
+          Serial.println(F("C"));
+          Serial.print(F("  Fan1 Speed: "));
+          Serial.print(busData.fanSpeed, 1);
+          Serial.println(F(" rpm"));
+          Serial.println(F(" "));
+    Serial.print(F("STATUS WORD 0x"));
+    Serial.println(busData.statusWord, HEX);
+    
+//    Serial.print(F("  0B "));
+//    printBits((busData.statusWord & 0xFF));
+//    Serial.print(F("   LOW: 0x"));
+//    Serial.println((busData.statusWord & 0xFF), HEX);
+//
+//    Serial.print(F("  0B "));
+//    printBits((busData.statusWord >> 8));
+//    Serial.print(F("   HIGH: 0x"));
+//    Serial.println((busData.statusWord >> 8), HEX);
+
+    Serial.println(F(" ************ PMBUS DATA  ************ "));
+    Serial.println(F(" "));    
 }

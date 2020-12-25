@@ -147,6 +147,8 @@ void mfr_menu_commands(){
 
 void printpmbusData(struct PowerPmbus busData)
 {
+    Serial.print(F("PMBUS ADDRESS: 0x"));
+    Serial.println(busData.i2cAddr, HEX);   
     Serial.println(F("INPUT: "));
     Serial.print(F("Volt : "));
     Serial.print(busData.inputV, 2);
@@ -507,5 +509,12 @@ void iOutFan()
             Serial.println(F("A")); 
             Serial.println(F(" "));        
         }
+
+void printchar(uint8_t *values, uint8_t bsize){
+  for(int i = 0; i < bsize; i++){
+    Serial.printf(" %02x", values[i]);
+  }
+   Serial.println();
+}
 
         
