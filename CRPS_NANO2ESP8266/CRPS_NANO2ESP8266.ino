@@ -60,7 +60,7 @@ static struct PowerPmbus
   uint8_t i2cAddr;  
 }pd;
         
-//const uint8_t kBuzzerPin = 15;
+const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
 const uint8_t kInterruptPin = 22;
@@ -71,22 +71,32 @@ static LT_SMBus *smbus = new LT_SMBusPec();
 static LT_PMBus *pmbus = new LT_PMBus(smbus);
 uint8_t n = 0 ;
 long seq = 0;
-bool scani2c = true;
+boolean scani2c = true;
+
 void setup()
 {
   pinMode(kButtonPin, INPUT_PULLUP);
   pinMode(kLedPin, OUTPUT);
+  pinMode(kInterruptPin, OUTPUT);
+  digitalWrite(kLedPin, LOW);
+  digitalWrite(kInterruptPin, HIGH);
   Serial.begin(38400);              //! Initialize the serial port to the PC 38400
-  Serial1.begin(38400);             //Using the Serial1 port to the ESP8266  
-  digitalWrite(kLedPin, LOW);  
+  Serial1.begin(38400);             //Using the Serial1 port to the ESP8266    
   ps_i2c_address = PS_I2C_ADDRESS;
 //  ps_patner_address = PS_PARTNER_ADDRESS;
+if (digitalRead(kButtonPin) == 0){
+    delay(10);
+    if(digitalRead(kButtonPin) == 0){
+      buzzing();
+      scani2c = false;
+    }
+  }
 while(scani2c){
   digitalWrite(kLedPin, HIGH);
   pmbusdetects();
-  delay(150);
+  //delay(30);
   digitalWrite(kLedPin, LOW);
-  delay(300);
+  delay(230);
   if(n > 0) break;
 }
 Serial.printf("\n%#02x:", ps_i2c_address);
@@ -95,14 +105,25 @@ delay(500);
 
 void loop()
 {
-    readpmbusdata(); 
-    printpmbusData(pd);
-    sent2esp8266();
+    if(readpmbusdata()){
+      Serial.print(F("Read Data: fail.\n"));
+    }
+    else{
+          sent2esp8266();
+          printpmbusData(pd);         
+    }
+
     if(seq%2) digitalWrite(kLedPin, HIGH);
     seq++;
-    delay(300);
+    delay(1000);
     digitalWrite(kLedPin, LOW);
 }
+
+void buzzing(){
+         tone(kBuzzerPin, 2200);
+          delay(50);
+           noTone(kBuzzerPin);
+    }
 
 void sent2esp8266(){
     uint8_t foo[sizeof(struct PowerPmbus)];
@@ -112,9 +133,8 @@ void sent2esp8266(){
     digitalWrite(kInterruptPin, HIGH);
     Serial1.write(foo, 51);
     for (int i = 0; i < 51; i++){
-          Serial.print(" ");
-          Serial.print(foo[i],HEX);
-          delay(10);
+          Serial.printf(" %02x", foo[i]);
+          delay(2);
       }
    Serial.println(" ");
    Serial.println("Data Sent to ESP8266.");
@@ -128,7 +148,7 @@ void pmbusdetects(){
   for (i = 8; i < 16; i++) {
     Serial.printf("%3x", i);
   }
-      Serial.printf("\n%#02x:", 0x50);
+  Serial.printf("\n%#02x:", 0x50);
   for (address = 88; address <= 95; address++) {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
@@ -146,15 +166,20 @@ void pmbusdetects(){
         // error = 2: received NACK on transmit of address
         // error = 3: received NACK on transmit of data
         Serial.print(" --");
-        delay(20);
-      } 
-  }
+      }
+      delay(15); 
+    }
   Serial.println("\n");
   Serial.println(n);
 }
 
-void readpmbusdata()
+int8_t readpmbusdata()
   {
+      int8_t ret = 1;
+      LT_Wire.beginTransmission(ps_i2c_address);
+      LT_Wire.write(0x00);
+      ret = LT_Wire.endTransmission(false);
+    
      pd.i2cAddr = ps_i2c_address;
      pd.inputV = pmbus->readVin(ps_i2c_address, false);
      pd.inputA = pmbus->readIin(ps_i2c_address, false);
@@ -171,7 +196,8 @@ void readpmbusdata()
      pd.outputVsb = pmbus->readVout(ps_i2c_address, false);
      pd.outputAsb = pmbus->readIout(ps_i2c_address, false);
      pmbus->setPage(ps_i2c_address,0); 
-     delay(20);     
+     delay(20);
+     return ret;    
 }
 
 void printpmbusData(struct PowerPmbus busData)
