@@ -63,6 +63,7 @@ static struct PowerPmbus
 //const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
+const uint8_t kInterruptPin = 22;
 
 static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
@@ -94,62 +95,31 @@ delay(500);
 
 void loop()
 {
-
-    readpmbusdata();
-  
+    readpmbusdata(); 
     printpmbusData(pd);
-//    sent2esp8266();
+    sent2esp8266();
     if(seq%2) digitalWrite(kLedPin, HIGH);
     seq++;
-    delay(1000);
+    delay(300);
     digitalWrite(kLedPin, LOW);
 }
 
 void sent2esp8266(){
-    uint8_t msb,lsb;
-    Serial1.write(0xAA);
-    Serial1.write(0xCC);
-    delay(2);
-    if(Serial1.available()>0){
-    while(Serial1.available() < 2){
-      
-    }
-    //Serial.println("Serial_1_available:");
-    msb = Serial1.read();
-    lsb = Serial1.read();
-    uint16_t incom = (msb << 8) | lsb;   
-//    Serial.print("incom= ");
-//    Serial.println(incom, HEX);
-    if(incom ==  0xBBDD)
-    {
-      uint8_t foo[sizeof(struct PowerPmbus)];
-//      struct PowerPmbus x; /* populate */
-//      memcpy(foo, &x, sizeof x);
-      memcpy(foo, &pd, sizeof pd);
-      Serial1.write(foo, 50);
-      delay(50);
-//      for (int i = 0; i < 50; i++){
-//          Serial.print(" ");
-//          Serial.print(foo[i],HEX);
-//          delay(10);
-//      }
-       Serial.println("Data Sent to ESP8266.");
-       Serial.println(" ");
-    }
-    else
-    {
-       Serial.println("ESP8266 error.");
-       Serial.println(" ");
-    }
-  }
-  else {
-    Serial.println("ESP8266 No Response.");
-    Serial.println(" ");
-  }
-    Serial.flush();
-    Serial1.flush();
-    delay(50);
+    uint8_t foo[sizeof(struct PowerPmbus)];
+      //struct myStruct x; /* populate */
+    memcpy(foo, &pd, sizeof pd);
+    digitalWrite(kInterruptPin, LOW);
+    digitalWrite(kInterruptPin, HIGH);
+    Serial1.write(foo, 51);
+    for (int i = 0; i < 51; i++){
+          Serial.print(" ");
+          Serial.print(foo[i],HEX);
+          delay(10);
+      }
+   Serial.println(" ");
+   Serial.println("Data Sent to ESP8266.");
 }
+
 
 void pmbusdetects(){
   uint8_t i, address, error;

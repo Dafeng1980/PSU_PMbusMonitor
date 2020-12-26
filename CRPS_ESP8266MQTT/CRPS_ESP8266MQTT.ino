@@ -2,7 +2,7 @@
 #include <PubSubClient.h>
 #define TRACE 1
 #define MSG_BUFFER_SIZE  (50)
-#define MAXBUFFER (50)
+#define MAXBUFFER (51)
 static uint8_t receivedata[MAXBUFFER];
 
 union floatData{
@@ -16,6 +16,10 @@ const char* clientID = "device1";
 const char* mqtt_user = "dfiot";
 const char* mqtt_password = "123abc";
 const uint16_t mqtt_port =  1883;
+const int interruptPin = D3;
+const int ledPin = D0;
+bool receivesdata = false;
+bool ledstatus = true;
 unsigned long lastMsg = 0;
 char msg[MSG_BUFFER_SIZE];
 uint16_t value = 0;
@@ -26,14 +30,24 @@ PubSubClient client(mqtt_server, mqtt_port, eClient);
 //const char *mqtt_broker = "broker.emqx.io";
 //const int mqtt_port = 1883;
 
+void ICACHE_RAM_ATTR handleInterrupt(){
+  receivesdata = true;
+  crps_receives(); 
+}
+
 void setup() {
-  pinMode(BUILTIN_LED, OUTPUT);
+  //pinMode(BUILTIN_LED, OUTPUT);
   Serial.begin(38400);
   Serial1.begin(38400);
+  pinMode(interruptPin, INPUT_PULLUP);
+  pinMode(ledPin, OUTPUT);
+  digitalWrite(ledPin, LOW);
+  attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, FALLING);
   setupWifi();
   client.setCallback(callback);
   client.connect(clientID, mqtt_user, mqtt_password);
   Serial1.println("Debug message..2..: ");
+  digitalWrite(ledPin, HIGH);
 }
 
 void loop() {
@@ -42,16 +56,18 @@ void loop() {
   }
   client.loop();
   
-  if(crps_receives()){
+  if(receivesdata){
+    
   unsigned long now = millis();
     if (now - lastMsg > 1500) {
       lastMsg = now;
-      ++value;
-      snprintf (msg, MSG_BUFFER_SIZE, "CRPS Refresh#%ld", value);
+      ++value;     
+      snprintf (msg, MSG_BUFFER_SIZE, "CRPSAddr: 0x%02x Refresh#%ld", receivedata[50], value );
       Serial1.print("Publish message: ");
       Serial1.println(msg);
       client.publish("crps/Topic", msg);
     }
+  detachInterrupt(digitalPinToInterrupt(interruptPin));
   float val = tofloat(0);          ////inputV;
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", val);
   Serial1.print("Publish message: ");
@@ -129,12 +145,22 @@ void loop() {
   Serial1.println(msg);
   client.publish("crps/status", msg);
   //client.subscribe("inTopic");
+  receivesdata = false;
+  attachInterrupt(digitalPinToInterrupt(interruptPin), handleInterrupt, FALLING);
   }
    n++;
   if(n%20 == 0){
     Serial1.print("debug-port");
     Serial1.println(n);
+    if(ledstatus){
+      digitalWrite(ledPin, LOW);
+      ledstatus = false;
   } 
+  else{
+    digitalWrite(ledPin, HIGH);
+    ledstatus = true;
+     }
+  }
   delay(100);
 }
 
@@ -182,11 +208,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
     digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
     Serial1.println("LED_OFF_light...");
   }
-  
-
 }
-
-
 
 void reconnect() {
   // Loop until we're reconnected
@@ -216,38 +238,15 @@ void reconnect() {
   }
 }
 
-
-uint8_t crps_receives(){
-  uint8_t val = 0;
-  uint8_t msb,lsb;
-  uint16_t incom;
-  if (Serial.available()>0){
-    
-    while(Serial.available() < 2){     
-    }   
-    msb = Serial.read();
-    lsb = Serial.read();
-    incom = (msb << 8) | lsb;
-    
-  if (incom == 0xAACC)
-  {
-    Serial.write(0xBB);
-    Serial.write(0xDD);
-    while(Serial.available( )< 52){
-    }
-    Serial.read();
-    Serial.read();
-   for (int i = 0; i < 50; i++) {
-        receivedata[i] = Serial.read();
-        }
-      val = 1;
+void crps_receives(){
+  if (Serial.available()>0){ 
+      for (int i = 0; i < 51; i++) {
+          receivedata[i] = Serial.read();
+          }
+      }
+   else receivesdata = false;
   }
   
-  }
-  Serial.flush();
-  return val;
-}
-
 float tofloat(uint16_t num){
   for (int i = 0; i<4; i++){
     fd.n[i] = receivedata[i+num];
