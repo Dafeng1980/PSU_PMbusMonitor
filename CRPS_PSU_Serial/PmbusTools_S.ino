@@ -35,9 +35,9 @@ void mfr_menu_commands(){
     Serial.print(F("  3-Read MFR_BLACKBOX\n"));
     Serial.print(F("  4-Clear the 05&06 Cal \n"));
 //    Serial.print(F("  5-Margin High\n"));
-    Serial.print(F("  6-Margin Low\n"));
+//    Serial.print(F("  6-Margin Low\n"));
     Serial.print(F("  7-Mass Erase the PFlash\n"));
-    Serial.print(F("  8-Reads UCD3138 Pflash At 2k Checksum \n"));
+    Serial.print(F("  8-Reads UCD3138 Pflash At 2k_32K_64K Checksum \n"));
     Serial.print(F("  9-Erase&Write UCD3138 Pflash At 2k Checksum \n"));
     Serial.print(F("  m-Main Menu\n"));
     Serial.print(F("\nEnter a command: "));
@@ -64,10 +64,9 @@ void mfr_menu_commands(){
         break;
       case 2:
       getCsu2000AdcFwRev();
-    //  print_all_sensors();
         break;
       case 3:
-      setFanFullSpeed();
+//      setFanFullSpeed();
         break;
       case 4:
 //       Serial.println(F(" "));
@@ -86,18 +85,19 @@ void mfr_menu_commands(){
       
       case 6:
          Serial.println(F(" "));
-         Serial.println(F("Display the PFlash checksum_"));
-         Serial.print(F("Press button to continue"));
-         Serial.println(F(" "));
-          ucd3138FlashDisplay(0x07A0);
-          Serial.println(F(" "));
-          buzzing();
-          ucd3138FlashDisplay(0x7FA0);
-          Serial.println(F(" "));
-          buzzing();
-          ucd3138FlashDisplay(0xFF00);
-          Serial.println(F(" "));
-          buzzing();
+         Serial.println(F("No Test "));
+//         Serial.println(F("Display the PFlash checksum_"));
+//         Serial.print(F("Press button to continue"));
+//         Serial.println(F(" "));
+//          ucd3138FlashDisplay(0x07A0);
+//          Serial.println(F(" "));
+//          buzzing();
+//          ucd3138FlashDisplay(0x7FA0);
+//          Serial.println(F(" "));
+//          buzzing();
+//          ucd3138FlashDisplay(0x8100);
+//          Serial.println(F(" "));
+//          buzzing();
         break;
       case 7:
         Serial.println(F(" "));
@@ -115,13 +115,25 @@ void mfr_menu_commands(){
         break;
         
       case 8:
-        ucd3138ConfReaAddr(RAEDADDR);
-        Serial.println(F(" "));
-        Serial.print(F("Configure Read Address at : 0x"));
-        Serial.println(RAEDADDR, HEX);
-        Serial.println(F(" "));
-        delay(10);
-        ucd3138Reads();
+//        ucd3138ConfReaAddr(RAEDADDR);
+//        Serial.println(F(" "));
+//        Serial.print(F("Configure Read Address at : 0x"));
+//        Serial.println(RAEDADDR, HEX);
+//        Serial.println(F(" "));
+//        delay(10);
+//        ucd3138Reads();
+         Serial.println(F(" "));
+         Serial.println(F("Display the PFlash checksum_2k_32k_64k"));
+         Serial.println(F(" "));
+          ucd3138FlashDisplay(0x07A0);
+          Serial.println(F(" "));
+          buzzing();
+          ucd3138FlashDisplay(0x7FA0);
+          Serial.println(F(" "));
+          buzzing();
+          ucd3138FlashDisplay(0xFFA0);
+          Serial.println(F(" "));
+          buzzing();
         break;
         
       case 9:

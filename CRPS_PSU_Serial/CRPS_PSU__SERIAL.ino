@@ -65,7 +65,8 @@ static struct PowerPmbus
  long seq = 0;           
  boolean pec = true;        // PEC(Packet Errot Code) support 
  //boolean pec = false; 
- boolean scani2c = true;
+ boolean scani2c = true;    //initialze i2c address, 
+// boolean scani2c = false;
 const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
@@ -102,10 +103,15 @@ void setup()
           smbus = new LT_SMBusNoPec();
           pmbus = new LT_PMBus(smbus);
           Serial.println(F("PEC Off"));
-         }
-        
-    print_memu();
-
+         }       
+  print_memu();
+  if (digitalRead(kButtonPin) == 0){
+    delay(10);
+    if(digitalRead(kButtonPin) == 0){
+      buzzing();
+      scani2c = false;
+    }
+  }
 //            uint8_t result;
 //            if(i2c_bus.readByteData(ps_i2c_address, 0x00, &result))  //read  Page and check PMbus available
 //            {
@@ -162,11 +168,11 @@ void loop()
        //calibration_data_read();
       // calibration_write_counter();
        Serial.println(F("READ_OK"));
-        delay(100);
-        Serial.print(F("Press button to continue"));
-        while(digitalRead(kButtonPin) != 0);
-        Serial.println(F(" "));
-        key = 1;
+       delay(100);
+       Serial.print(F("Press button to continue"));
+       while(digitalRead(kButtonPin) != 0);
+       Serial.println(F(" "));
+       key = 1;
        break;
 
        case 5:
@@ -187,10 +193,10 @@ void loop()
         key = 7;    //read two PS share Current 
         break;                       
         case 7:
-        displayCrbusCur();        
+       // displayCrbusCur();        
         break;            
         case 8:
-         mfr_menu_commands();
+        mfr_menu_commands();
           key = 0;
           break;           
         case 9:
@@ -211,9 +217,7 @@ void loop()
     checkButton();
 }
 
-
 void checkButton(){
-
   if (digitalRead(kButtonPin) == 0){
     delay(10);
     if(digitalRead(kButtonPin) == 0){
@@ -221,52 +225,6 @@ void checkButton(){
       key = 0;
     }
   }
-}
-
-void sent2esp8266(){
-    uint8_t msb,lsb;
-    Serial1.write(0xAA);
-    Serial1.write(0xCC);
-    delay(2);
-    if(Serial1.available()>0){
-    while(Serial1.available() < 2){
-      
-    }
-    //Serial.println("Serial_1_available:");
-    msb = Serial1.read();
-    lsb = Serial1.read();
-    uint16_t incom = (msb << 8) | lsb;   
-//    Serial.print("incom= ");
-//    Serial.println(incom, HEX);
-    if(incom ==  0xBBDD)
-    {
-      uint8_t foo[sizeof(struct PowerPmbus)];
-//      struct PowerPmbus x; /* populate */
-//      memcpy(foo, &x, sizeof x);
-      memcpy(foo, &pd, sizeof pd);
-      Serial1.write(foo, 50);
-      delay(50);
-//      for (int i = 0; i < 50; i++){
-//          Serial.print(" ");
-//          Serial.print(foo[i],HEX);
-//          delay(10);
-//      }
-       Serial.println("Data Sent to ESP8266.");
-       Serial.println(" ");
-    }
-    else
-    {
-       Serial.println("ESP8266 error.");
-       Serial.println(" ");
-    }
-  }
-  else {
-    Serial.println("ESP8266 No Response.");
-    Serial.println(" ");
-  }
-    Serial.flush();
-    Serial1.flush();
-    delay(50);
 }
 
 void pmbusdetects(){

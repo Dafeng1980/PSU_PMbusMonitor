@@ -60,8 +60,8 @@ static struct PowerPmbus
   uint8_t i2cAddr;  
 }pd;
         
-const uint8_t kBuzzerPin = 15;
-const uint8_t kButtonPin = 2;
+//const uint8_t kBuzzerPin = 15;
+//const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
 const uint8_t kInterruptPin = 22;
 
@@ -75,7 +75,7 @@ boolean scani2c = true;
 
 void setup()
 {
-  pinMode(kButtonPin, INPUT_PULLUP);
+//  pinMode(kButtonPin, INPUT_PULLUP);
   pinMode(kLedPin, OUTPUT);
   pinMode(kInterruptPin, OUTPUT);
   digitalWrite(kLedPin, LOW);
@@ -84,13 +84,6 @@ void setup()
   Serial1.begin(38400);             //Using the Serial1 port to the ESP8266    
   ps_i2c_address = PS_I2C_ADDRESS;
 //  ps_patner_address = PS_PARTNER_ADDRESS;
-if (digitalRead(kButtonPin) == 0){
-    delay(10);
-    if(digitalRead(kButtonPin) == 0){
-      buzzing();
-      scani2c = false;
-    }
-  }
 while(scani2c){
   digitalWrite(kLedPin, HIGH);
   pmbusdetects();
@@ -99,8 +92,8 @@ while(scani2c){
   delay(230);
   if(n > 0) break;
 }
-Serial.printf("\n%#02x:", ps_i2c_address);
-delay(500);
+  Serial.printf("\n%#02x:", ps_i2c_address);
+  delay(500);
   }
 
 void loop()
@@ -115,15 +108,15 @@ void loop()
 
     if(seq%2) digitalWrite(kLedPin, HIGH);
     seq++;
-    delay(1000);
+    delay(200);
     digitalWrite(kLedPin, LOW);
 }
 
-void buzzing(){
-         tone(kBuzzerPin, 2200);
-          delay(50);
-           noTone(kBuzzerPin);
-    }
+//void buzzing(){
+//         tone(kBuzzerPin, 2200);
+//          delay(50);
+//           noTone(kBuzzerPin);
+//    }
 
 void sent2esp8266(){
     uint8_t foo[sizeof(struct PowerPmbus)];
@@ -177,7 +170,6 @@ int8_t readpmbusdata()
   {
       int8_t ret = 1;
       LT_Wire.beginTransmission(ps_i2c_address);
-      LT_Wire.write(0x00);
       ret = LT_Wire.endTransmission(false);
     
      pd.i2cAddr = ps_i2c_address;
@@ -251,17 +243,6 @@ void printpmbusData(struct PowerPmbus busData)
           Serial.println(F(" "));
     Serial.print(F("STATUS WORD 0x"));
     Serial.println(busData.statusWord, HEX);
-    
-//    Serial.print(F("  0B "));
-//    printBits((busData.statusWord & 0xFF));
-//    Serial.print(F("   LOW: 0x"));
-//    Serial.println((busData.statusWord & 0xFF), HEX);
-//
-//    Serial.print(F("  0B "));
-//    printBits((busData.statusWord >> 8));
-//    Serial.print(F("   HIGH: 0x"));
-//    Serial.println((busData.statusWord >> 8), HEX);
-
     Serial.println(F(" ************ PMBUS DATA  ************ "));
     Serial.println(F(" "));    
 }
