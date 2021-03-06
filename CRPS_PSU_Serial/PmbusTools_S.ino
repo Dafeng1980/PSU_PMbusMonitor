@@ -86,19 +86,8 @@ void mfr_menu_commands(){
       case 6:
          Serial.println(F(" "));
          Serial.println(F("No Test "));
-//         Serial.println(F("Display the PFlash checksum_"));
-//         Serial.print(F("Press button to continue"));
-//         Serial.println(F(" "));
-//          ucd3138FlashDisplay(0x07A0);
-//          Serial.println(F(" "));
-//          buzzing();
-//          ucd3138FlashDisplay(0x7FA0);
-//          Serial.println(F(" "));
-//          buzzing();
-//          ucd3138FlashDisplay(0x8100);
-//          Serial.println(F(" "));
-//          buzzing();
         break;
+        
       case 7:
         Serial.println(F(" "));
         Serial.println(F("Mass Erase the PFlash 0x048000 to 0x04FFFF For 32K"));
@@ -131,7 +120,7 @@ void mfr_menu_commands(){
           ucd3138FlashDisplay(0x7FA0);
           Serial.println(F(" "));
           buzzing();
-          ucd3138FlashDisplay(0xFFA0);
+          ucd3138FlashDisplay(0xFF00);
           Serial.println(F(" "));
           buzzing();
         break;

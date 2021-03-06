@@ -61,15 +61,18 @@ static struct PowerPmbus
   uint8_t i2cAddr;  
 }pd;
  int key;
+ unsigned long previousMillis = 0;
  uint8_t n = 0 ;
  long seq = 0;           
  boolean pec = true;        // PEC(Packet Errot Code) support 
  //boolean pec = false; 
  boolean scani2c = true;    //initialze i2c address, 
 // boolean scani2c = false;
+boolean ledstatus = true;
 const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
+const uint16_t kPmInterval = 600;  //PMbus refresh rate (miliseconds) 
 
 static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
@@ -105,6 +108,8 @@ void setup()
           Serial.println(F("PEC Off"));
          }       
   print_memu();
+  delay(100);
+ // scani2c = false;
   if (digitalRead(kButtonPin) == 0){
     delay(10);
     if(digitalRead(kButtonPin) == 0){
@@ -112,17 +117,11 @@ void setup()
       scani2c = false;
     }
   }
-//            uint8_t result;
-//            if(i2c_bus.readByteData(ps_i2c_address, 0x00, &result))  //read  Page and check PMbus available
+//   uint8_t result;
+// if(i2c_bus.readByteData(ps_i2c_address, 0x00, &result))  //read  Page and check PMbus available
 //            {
 //              Serial.println(F("PMbus is not responding"));
-//              Serial.print(F("press button to continue"));
-////              digitalWrite(kLedPin, HIGH);
-////              while(digitalRead(kButtonPin) != 0);
 //            }
-//            Serial.println(F(" "));
-//            Serial.print(F("PAGE= "));
-//            Serial.println(result);
 
  while(scani2c){
     digitalWrite(kLedPin, HIGH);
@@ -137,16 +136,18 @@ void setup()
   }
 
 void loop()
-{
+{  
   if (Serial.available())                //! Checks for user input
   {
       key = read_int();                     //! Reads the user command
       Serial.print("key=");
       Serial.println(key);
   }
-    readpmbusdata();
-    // sent2esp8266();
 
+ unsigned long currentMillis = millis();
+ if (currentMillis - previousMillis >= kPmInterval){
+  previousMillis = currentMillis;
+  readpmbusdata();    
   switch (key)
     {
       case 1:
@@ -176,7 +177,7 @@ void loop()
        break;
 
        case 5:
-        i2cdetects(0x03, 0x7F);
+       i2cdetects(0x03, 0x7F);
        break;
 
       case 6:
@@ -209,11 +210,18 @@ void loop()
               key = 0;
               break;
       }
-      
-    if(seq%2) digitalWrite(kLedPin, HIGH);
-    seq++;
-    delay(1000);
-    digitalWrite(kLedPin, LOW);
+      seq++;
+      if(seq%3==0) {
+        if(ledstatus){
+        digitalWrite(kLedPin, HIGH);
+        ledstatus = false;
+        }
+        else{
+          digitalWrite(kLedPin, LOW);
+          ledstatus = true;
+        }
+      }
+  }
     checkButton();
 }
 
