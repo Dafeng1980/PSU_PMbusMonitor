@@ -103,7 +103,7 @@ float pmbus_readMtemp(uint8_t address)
   return L11_to_float(temp_L11);
 }
 
-float pmbus_readFanSpeed1(uint8_t address)
+float pmbus_readFanSpeed1(uint8_t address)  //Fan speed1
 {
   uint16_t temp_L11;
   temp_L11 = smbus_readWord(address, 0x90);

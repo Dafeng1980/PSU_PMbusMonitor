@@ -1,10 +1,9 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-
 #define SDA_PIN 4
 #define SCL_PIN 5
-#define PECENABLE  1      //PEC ENABLE
+#define PECENABLE  1      //Smbus PEC(Packet Error Code) support
 #define PS_ADDRESS 0x58
 #define PS_PARTNER_ADDRESS 0x5E
 #define MSG_BUFFER_SIZE  (50)
@@ -133,12 +132,12 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
   // Switch on the LED if an 1 was received as first character
   if ((char)payload[0] == '1') {
-    digitalWrite(BUILTIN_LED, LOW);   // Turn the LED on (Note that LOW is the voltage level
+    digitalWrite(ledPin, LOW);   // Turn the LED on (Note that LOW is the voltage level
      Serial.println("LED_light...");                  // but actually the LED is on; this is because
                       // it is acive low on the ESP-01)
   }
   else {
-    digitalWrite(BUILTIN_LED, HIGH);  // Turn the LED off by making the voltage HIGH
+    digitalWrite(ledPin, HIGH);  // Turn the LED off by making the voltage HIGH
     Serial.println("LED_OFF_light...");
   }
 }
@@ -192,6 +191,5 @@ bool readpmbusdata()
      pd.outputAsb = pmbus_readIout(ps_i2c_address);
      pmbus_setPage(ps_i2c_address,0);
      pd.i2cAddr = ps_i2c_address;
-     return ret;
-   //  delay(20);     
+     return ret;  
 }

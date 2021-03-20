@@ -44,7 +44,6 @@ uint8_t smbus_waitForAck(uint8_t address, uint8_t command) //! Read with the add
   return 0;    //FAILURE
 }
 
-
 uint8_t smbus_readByte(uint8_t address, uint8_t command)
 {
   if (PECENABLE)
@@ -131,8 +130,7 @@ void smbus_writeByte(uint8_t address, uint8_t command, uint8_t data)
   }
 }
 
-void smbus_writeBytes(uint8_t *addresses, uint8_t *commands,
-                              uint8_t *data, uint8_t no_addresses)
+void smbus_writeBytes(uint8_t *addresses, uint8_t *commands, uint8_t *data, uint8_t no_addresses)
 {
   if (PECENABLE)
   {
@@ -185,25 +183,14 @@ void smbus_writeWord(uint8_t address, uint8_t command, uint16_t data)
   }
   else
   {
-
-//#if USE_BLOCK_TRANSACTION
-//    uint8_t buffer[2];
-//    buffer[0] = (uint8_t) (data & 0xff);
-//    buffer[1] = (uint8_t) (data >> 8);
-//
-//    if (i2cbus_->writeBlockData(address, command, 2, buffer))
-//      Serial.print(F("Write Word: fail.\n"));
-//#else
     uint16_t rdata;
     rdata = (data << 8) | (data >> 8);
     if (i2c_writeWordData(address, command, rdata))
       Serial.print(F("Write Word: fail.\n"));
-//#endif
   }
 }
 
-void smbus_writeBlock(uint8_t address, uint8_t command,
-                      uint8_t *block, uint16_t block_size)
+void smbus_writeBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t block_size)
 {
   if (PECENABLE)
   {
@@ -238,9 +225,7 @@ void smbus_writeBlock(uint8_t address, uint8_t command,
   }
 }
 
-
-uint8_t smbus_readBlock(uint8_t address, uint8_t command,
-                                uint8_t *block, uint16_t block_size)
+uint8_t smbus_readBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t block_size)
 {
   if (PECENABLE)
   {
@@ -289,8 +274,7 @@ uint8_t smbus_readBlock(uint8_t address, uint8_t command,
 }
 
 
-uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command,
-                   uint8_t *block_out, uint16_t block_out_size, uint8_t *block_in, uint16_t block_in_size)
+uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_out, uint16_t block_out_size, uint8_t *block_in, uint16_t block_in_size)
 {
   if (PECENABLE)
   {
@@ -308,7 +292,6 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command,
     uint8_t *buffer = (uint8_t *)malloc(block_out_size + 1);
     buffer[0] = block_out_size;
     memcpy(buffer + 1, block_out, block_out_size);
-
     Protocol = false;  //sends a restart message after transmission.
     if (i2c_writeBlockData(address, command, block_out_size + 1, buffer))
       Serial.print(F("Write/Read Block w/PEC: write fail\n"));
@@ -317,8 +300,6 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command,
 
 
     pecAdd((address << 1) | 0x01);
-
-   // i2cbus_->endGroupProtocol();
     Protocol = true;  // sends a stop message after transmission
     buffer = (uint8_t *)malloc(block_in_size + 2);
     if (i2c_readBlockData(address, block_in_size + 2, buffer))
@@ -346,13 +327,10 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command,
     buffer[0] = block_out_size;
     memcpy(buffer + 1, block_out, block_out_size);
 
-   // i2cbus_->startGroupProtocol();
     Protocol = false;  //sends a restart message after transmission.
     if (i2c_writeBlockData(address, command, block_out_size + 1, buffer))
       Serial.print(F("Write/Read Block write fail\n"));
     free(buffer);
-
-   // i2cbus_->endGroupProtocol();
     Protocol = true;  // sends a stop message after transmission
     buffer = (uint8_t *)malloc(block_in_size + 1);
     if (i2c_readBlockData(address, block_in_size + 1, buffer))
@@ -367,7 +345,6 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command,
     free(buffer);
     return actual_block_size;
   }
-
 }
 
 

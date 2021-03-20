@@ -159,7 +159,6 @@ void publishPmbusData(struct PowerPmbus busData){
 //  Serial1.println(msg);
   client.publish("crps/status", msg);
   //client.subscribe("inTopic");
- //  receivesdata = false;  
 }
 
 void printBits(byte myByte){
