@@ -1,8 +1,8 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-#define SDA_PIN 4
-#define SCL_PIN 5
+//#define SDA_PIN 4
+//#define SCL_PIN 5
 #define PECENABLE  1      //Smbus PEC(Packet Error Code) support
 #define PS_ADDRESS 0x58
 #define PS_PARTNER_ADDRESS 0x5E
@@ -37,14 +37,20 @@ const char* mqtt_user = "dfiot";
 const char* mqtt_password = "123abc";
 const uint16_t mqtt_port =  1883;
 const int ledPin = 16; 
+const int SDA_PIN = 4;       //for ESP-01s SDA = 0; SDC = 2;
+const int SCL_PIN = 5;       // ESP-12F SDA = 4; SCl = 5;
+
 unsigned long lastMsg = 0;
 char msg[MSG_BUFFER_SIZE];
 uint16_t value = 0;
 long count = 0;
+uint16_t k = 0;
 
-boolean Protocol = true;   // If true, endTransmission() sends a stop message after transmission, releasing the I2C bus.
-boolean scani2c = true;
-bool ledstatus = true;
+static boolean Protocol = true;   // If true, endTransmission() sends a stop message after transmission, releasing the I2C bus.
+static boolean scani2c = true;
+static bool ledstatus = true;
+static bool wifistatus = true;
+static bool wiset = true;
 
 WiFiClient eClient;
 PubSubClient client(mqtt_server, mqtt_port, eClient);
@@ -58,16 +64,17 @@ void setup() {
   digitalWrite(ledPin, LOW);
   ps_i2c_address = PS_ADDRESS;
 
+  delay(10);
   setupWifi();
+  if(wifistatus){
   client.setCallback(callback);
   client.connect(clientID, mqtt_user, mqtt_password);
   Serial.println("Debug message..2..: ");
   digitalWrite(ledPin, HIGH);
-  
-  for (int i = 0; i <3; i++){
-    i2cdetects(0x03, 0x7F);
-    delay(100);
   }
+  
+  delay(100);
+  i2cdetects(0x03, 0x7F);
   while(scani2c){
     digitalWrite(ledPin, HIGH);
     pmbusdetects();
@@ -80,15 +87,22 @@ void setup() {
 }
 
 void loop() {
+  if (wifistatus){
   if (!client.connected()) {
     reconnect();
   }
   client.loop();
+  } 
+  
+ unsigned long now = millis(); 
+  if (now - lastMsg >= 330) {
+      lastMsg = now;
     if(readpmbusdata()){
       publishPmbusData(pd);
     }
         count++;
-    if(count%15 == 0){
+        
+    if(count%3 == 0){
         printpmbusData(pd);
         if(ledstatus){
           digitalWrite(ledPin, LOW);
@@ -99,11 +113,13 @@ void loop() {
           ledstatus = true;
           }
        }
-     delay(200);
+    }
 }
 
 void setupWifi(){
   delay(10);
+  wiset = true;
+  wifistatus = true;
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
@@ -112,13 +128,25 @@ void setupWifi(){
 
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
+    k++;
     Serial.print(".");
+    if( k >= 20){
+    wiset = false;
+    wifistatus = false;
+    break;
+    }
   }
+  if(wiset){
   randomSeed(micros());
   Serial.println("");
   Serial.println("WiFi connected");
   Serial.println("IP address: ");
   Serial.println(WiFi.localIP());
+  }
+  else{
+    Serial.println("");
+    Serial.println("WiFi connect Failed");
+  }
 }
 
 void callback(char* topic, byte* payload, unsigned int length) {

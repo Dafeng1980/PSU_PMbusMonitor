@@ -24,6 +24,34 @@ if( exponent > 0x0F ) exponent |= 0xE0;
 return mantissa * pow(2.0,exponent);
 }
 
+uint16_t float_to_lin11(float input_val)
+{
+  // set exponent to -16
+int exponent = -16;
+// extract mantissa from input value
+int mantissa =
+(int)(input_val / pow(2.0, exponent));
+// Search for an exponent that produces
+// a valid 11-bit mantissa
+do
+{
+if((mantissa >= -1024) &&
+(mantissa <= +1023))
+{
+break; // stop if mantissa valid
+}
+exponent++;
+mantissa =
+(int)(input_val / pow(2.0, exponent));
+} while (exponent < +15);
+// Format the exponent of the L11
+uint16 uExponent = exponent << 11;
+// Format the mantissa of the L11
+uint16 uMantissa = mantissa & 0x07FF;
+// Compute value as exponent | mantissa
+return uExponent | uMantissa;
+}
+
 void pmbus_setPage(uint8_t address, uint8_t page)
 {
   // Set the page of the device to desired_page
@@ -80,6 +108,13 @@ float pmbus_readPout(uint8_t address)
   uint16_t pout_L11;
     pout_L11 = smbus_readWord(address, 0x96);  //READ_POUT = 0x96;
   return L11_to_float(pout_L11);
+}
+
+float pmbus_readVbulk(uint8_t address)
+{
+  uint16_t vbulk_L11;
+    vbulk_L11 = smbus_readWord(address, 0x8A);  //READ VBULK = 0x8A;
+    return L11_to_float(vbulk_L11); 
 }
 
 float pmbus_readOtemp(uint8_t address)

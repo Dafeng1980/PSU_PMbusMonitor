@@ -110,54 +110,56 @@ void printpmbusData(struct PowerPmbus busData)
 
 void publishPmbusData(struct PowerPmbus busData){
      
-  unsigned long now = millis();
-    if (now - lastMsg > 1500) {
-      lastMsg = now;
+ if (count%6 == 0) {
       ++value;     
       snprintf (msg, MSG_BUFFER_SIZE, "CRPSAddr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
       client.publish("crps/Topic", msg);
+      snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", pmbus_readVbulk(ps_i2c_address));
+      client.publish("crps/output/Vbulk", msg);
+      Serial.print("Vbluk= ");
+      Serial.println(msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
-  client.publish("crps/inputVolt", msg);
+  client.publish("crps/input/Volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.inputA);
-  client.publish("crps/inputCurr", msg);
+  client.publish("crps/input/Curr", msg);
   
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputP);
-  client.publish("crps/inputPower", msg);
+  client.publish("crps/input/Power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputV);
-  client.publish("crps/outputVolt", msg);
+  client.publish("crps/output/Volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputVsb);
-  client.publish("crps/outputVsb", msg);
+  client.publish("crps/output/Vsb", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputA);
-  client.publish("crps/outputCurr", msg);
+  client.publish("crps/output/Curr", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputAsb);
-  client.publish("crps/outputCsb", msg);
+  client.publish("crps/output/Csb", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.outputP);
-  client.publish("crps/outputPower", msg);
+  client.publish("crps/output/Power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.fanSpeed);
-  client.publish("crps/fanSpeed", msg);
+  client.publish("crps/sensor/fanSpeed", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp1);
-  client.publish("crps/temp1", msg);
+  client.publish("crps/sensor/temp1", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp2);
-  client.publish("crps/temp2", msg);
+  client.publish("crps/sensor/temp2", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp3);
-  client.publish("crps/temp3", msg);
+  client.publish("crps/sensor/temp3", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.statusWord >> 8, busData.statusWord & 0xFF);
 //  Serial1.print("Publish message: ");
 //  Serial1.println(msg);
-  client.publish("crps/status", msg);
+  client.publish("crps/status/word", msg);
   //client.subscribe("inTopic");
 }
 
