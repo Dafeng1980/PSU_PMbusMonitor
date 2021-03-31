@@ -110,56 +110,56 @@ void printpmbusData(struct PowerPmbus busData)
 
 void publishPmbusData(struct PowerPmbus busData){
      
- if (count%6 == 0) {
+ if (count%10 == 0) {
       ++value;     
-      snprintf (msg, MSG_BUFFER_SIZE, "CRPSAddr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
-      client.publish("crps/Topic", msg);
-      snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", pmbus_readVbulk(ps_i2c_address));
-      client.publish("crps/output/Vbulk", msg);
-      Serial.print("Vbluk= ");
-      Serial.println(msg);
+      snprintf (msg, MSG_BUFFER_SIZE, "PSU_Addr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
+      client.publish("pmbus/status", msg);
+//      snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", pmbus_readVbulk(ps_i2c_address));
+//      client.publish("pmbus/output/Vbulk", msg);
+//      Serial.print("Vbluk= ");
+//      Serial.println(msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
-  client.publish("crps/input/Volt", msg);
+  client.publish("pmbus/input/Volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.inputA);
-  client.publish("crps/input/Curr", msg);
+  client.publish("pmbus/input/Curr", msg);
   
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputP);
-  client.publish("crps/input/Power", msg);
+  client.publish("pmbus/input/Power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputV);
-  client.publish("crps/output/Volt", msg);
+  client.publish("pmbus/output/Volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputVsb);
-  client.publish("crps/output/Vsb", msg);
+  client.publish("pmbus/output/Vsb", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputA);
-  client.publish("crps/output/Curr", msg);
+  client.publish("pmbus/output/Curr", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputAsb);
-  client.publish("crps/output/Csb", msg);
+  client.publish("pmbus/output/Csb", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.outputP);
-  client.publish("crps/output/Power", msg);
+  client.publish("pmbus/output/Power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.fanSpeed);
-  client.publish("crps/sensor/fanSpeed", msg);
+  client.publish("pmbus/sensor/fanSpeed", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp1);
-  client.publish("crps/sensor/temp1", msg);
+  client.publish("pmbus/sensor/temp1", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp2);
-  client.publish("crps/sensor/temp2", msg);
+  client.publish("pmbus/sensor/temp2", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp3);
-  client.publish("crps/sensor/temp3", msg);
+  client.publish("pmbus/sensor/temp3", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.statusWord >> 8, busData.statusWord & 0xFF);
 //  Serial1.print("Publish message: ");
 //  Serial1.println(msg);
-  client.publish("crps/status/word", msg);
+  client.publish("pmbus/status/word", msg);
   //client.subscribe("inTopic");
 }
 
@@ -195,9 +195,9 @@ void pmbusdetects(){
         // device found
         n++;
         if(n == 1) ps_i2c_address = address;
-        else ps_i2c_address = PS_ADDRESS;
+        else ps_i2c_address = PSU_ADDRESS;
         if(n == 2) ps_patner_address = address;
-        else ps_patner_address = PS_PARTNER_ADDRESS;
+        else ps_patner_address = PSU_PARTNER_ADDRESS;
         Serial.printf(" %02x", address);       
       } else if (error == 4) {
         // other error
@@ -211,4 +211,30 @@ void pmbusdetects(){
   }
     Serial.println("\n");
   Serial.println(n);
+}
+
+bool readpmbusdata()
+{   
+    bool ret = true;
+    if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {
+      Serial.println("PMBUS Polling Fail \n");
+      return ret = false;
+    }    
+     pd.inputV = pmbus_readVin(ps_i2c_address);
+     pd.inputA = pmbus_readIin(ps_i2c_address);
+     pd.outputV = pmbus_readVout(ps_i2c_address);
+     pd.outputA = pmbus_readIout(ps_i2c_address);
+     pd.inputP = pmbus_readPin(ps_i2c_address);
+     pd.outputP = pmbus_readPout(ps_i2c_address);
+     pd.temp1 = pmbus_readOtemp(ps_i2c_address);           //temp sensor 0x8D  
+     pd.temp2 = pmbus_readItemp(ps_i2c_address);        //temp sensor 0x8E  
+     pd.temp3 = pmbus_readMtemp(ps_i2c_address);        //temp sensor 0x8F  
+     pd.fanSpeed = pmbus_readFanSpeed1(ps_i2c_address);
+     pd.statusWord = pmbus_readStatusWord(ps_i2c_address); 
+     pmbus_setPage(ps_i2c_address,1);                    //set Page to 1, read 12Vsb 
+     pd.outputVsb = pmbus_readVout(ps_i2c_address);
+     pd.outputAsb = pmbus_readIout(ps_i2c_address);
+     pmbus_setPage(ps_i2c_address,0);
+     pd.i2cAddr = ps_i2c_address;
+     return ret;  
 }

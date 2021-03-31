@@ -35,7 +35,8 @@ uint8_t smbus_waitForAck(uint8_t address, uint8_t command) //! Read with the add
 {                                                          //  then issue stop 
   uint8_t data;
   // A real application should timeout at 4.1 seconds.
-  uint16_t timeout = 8192;
+  // uint16_t timeout = 8192;
+  uint16_t timeout = 32;
   while (timeout-- > 0)
   {
     if (0 == i2c_readByteData(address, command, &data))

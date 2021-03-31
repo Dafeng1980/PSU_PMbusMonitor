@@ -1,11 +1,9 @@
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
-//#define SDA_PIN 4
-//#define SCL_PIN 5
 #define PECENABLE  1      //Smbus PEC(Packet Error Code) support
-#define PS_ADDRESS 0x58
-#define PS_PARTNER_ADDRESS 0x5E
+#define PSU_ADDRESS 0x58
+#define PSU_PARTNER_ADDRESS 0x5E
 #define MSG_BUFFER_SIZE  (50)
 
 static struct PowerPmbus
@@ -62,19 +60,19 @@ void setup() {
   Serial.begin(38400);
   pinMode(ledPin, OUTPUT);
   digitalWrite(ledPin, LOW);
-  ps_i2c_address = PS_ADDRESS;
+  ps_i2c_address = PSU_ADDRESS;
 
   delay(10);
   setupWifi();
   if(wifistatus){
   client.setCallback(callback);
   client.connect(clientID, mqtt_user, mqtt_password);
-  Serial.println("Debug message..2..: ");
+  Serial.println("MQTT Broker Connected.  \n");
   digitalWrite(ledPin, HIGH);
-  }
-  
+  } 
   delay(100);
   i2cdetects(0x03, 0x7F);
+  scani2c = false;
   while(scani2c){
     digitalWrite(ledPin, HIGH);
     pmbusdetects();
@@ -83,37 +81,38 @@ void setup() {
     delay(210);
     if(n > 0) break;
     }
- Serial.printf("\nPMBUSADDRESS %#02x:\n", ps_i2c_address);
+ Serial.printf("\n PSU_ADDRESS: %#02x:\n", ps_i2c_address);
 }
 
 void loop() {
   if (wifistatus){
-  if (!client.connected()) {
-    reconnect();
-  }
-  client.loop();
-  } 
+    if (!client.connected()) {
+        reconnect();
+       }
+  //client.subscribe("inTopic");
+  client.subscribe("pmbus/set");
+    client.loop();
+ } 
   
  unsigned long now = millis(); 
   if (now - lastMsg >= 330) {
       lastMsg = now;
     if(readpmbusdata()){
-      publishPmbusData(pd);
-    }
-        count++;
-        
-    if(count%3 == 0){
+      if(wifistatus) publishPmbusData(pd);
+      if(count%5 == 0){
         printpmbusData(pd);
         if(ledstatus){
-          digitalWrite(ledPin, LOW);
-          ledstatus = false;
+            digitalWrite(ledPin, LOW);
+            ledstatus = false;
           } 
         else{
-          digitalWrite(ledPin, HIGH);
-          ledstatus = true;
+            digitalWrite(ledPin, HIGH);
+            ledstatus = true;
           }
-       }
+       }     
     }
+      count++;        
+  }
 }
 
 void setupWifi(){
@@ -196,28 +195,4 @@ void reconnect() {
       delay(5000);
     }
   }
-}
-
-bool readpmbusdata()
-{   
-    bool ret = 0;
-    if(smbus_waitForAck(ps_i2c_address, 0x00) == 1)
-       ret = 1;
-     pd.inputV = pmbus_readVin(ps_i2c_address);
-     pd.inputA = pmbus_readIin(ps_i2c_address);
-     pd.outputV = pmbus_readVout(ps_i2c_address);
-     pd.outputA = pmbus_readIout(ps_i2c_address);
-     pd.inputP = pmbus_readPin(ps_i2c_address);
-     pd.outputP = pmbus_readPout(ps_i2c_address);
-     pd.temp1 = pmbus_readOtemp(ps_i2c_address);           //temp sensor 0x8D  
-     pd.temp2 = pmbus_readItemp(ps_i2c_address);        //temp sensor 0x8E  
-     pd.temp3 = pmbus_readMtemp(ps_i2c_address);        //temp sensor 0x8F  
-     pd.fanSpeed = pmbus_readFanSpeed1(ps_i2c_address);
-     pd.statusWord = pmbus_readStatusWord(ps_i2c_address); 
-     pmbus_setPage(ps_i2c_address,1);                    //set Page to 1, read 12Vsb 
-     pd.outputVsb = pmbus_readVout(ps_i2c_address);
-     pd.outputAsb = pmbus_readIout(ps_i2c_address);
-     pmbus_setPage(ps_i2c_address,0);
-     pd.i2cAddr = ps_i2c_address;
-     return ret;  
 }
