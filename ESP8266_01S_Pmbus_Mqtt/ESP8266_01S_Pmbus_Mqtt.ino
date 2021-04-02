@@ -83,11 +83,12 @@ void setup() {
      readBootloader_version(ps_i2c_address, ver+3);
      Serial.printf("\n FW_REV: %02x%02x%02x \n", ver[0],ver[1],ver[2]);
      Serial.printf("\n Bootloader_REV: %02x%02x%02x \n", ver[3],ver[4],ver[5]);
-     
+    if(wifistatus){ 
      snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
      client.publish("pmbus/fru/HWversion", msg);
      snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
      client.publish("pmbus/fru/BLversion", msg);
+    }
   } 
 }
 
