@@ -1,4 +1,4 @@
-# PowerPMbusTools
+# Mega Nano Board
 
 Base on [Mega128L Nano Board](https://github.com/Dafeng1980/AtmegaBoards), Arduino Compatible.  <br/> 
  [PMbus libraries](https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html "https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html") in Linduino:  <br/>
