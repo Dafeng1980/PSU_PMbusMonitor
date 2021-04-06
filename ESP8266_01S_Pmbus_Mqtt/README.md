@@ -14,13 +14,13 @@ Base on ESP-01 Board (Very low cost Board!!)
 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/connected.jpg)  <br/> <br/>
 
-### PMbus monitoring Shown on Android smartphone MQTT:  <br/>
+### PMbus displayed on Android smartphone MQTT:  <br/>
 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/Mqtt_Phone.jpg)  
 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/pmbus_Mqtt.png)  <br/> <br/>
 
-### PMbus monitoring Shown on Android smartphone SERIAL:  <br/>
+### PMbus displayed on Android smartphone SERIAL:  <br/>
 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/pmbus_Serial.png)   <br/> <br/>
 
