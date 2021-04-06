@@ -1,7 +1,7 @@
 
 /*
  * #include <Wire.h>
- * Modify "Wire.h", Wire.cpp", added the Wire.requestFromS to Support New requestFrom.
+ * Modify "Wire.h", Wire.cpp", added the Wire.requestFromS to Support SMbus Wire.requestFrom.
  * in folder %USERPROFILE%\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\2.7.4\libraries\
  * 
  */

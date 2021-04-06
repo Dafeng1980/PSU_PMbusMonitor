@@ -1,4 +1,10 @@
 
+/*
+ * #include <Wire.h>
+ * Modify "Wire.h", Wire.cpp", added the Wire.requestFromS to Support SMbus Wire.requestFrom.
+ * in folder %USERPROFILE%\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\2.7.4\libraries\
+ * 
+ */
 uint8_t i2c_requestFrom(uint8_t address, uint8_t *acceptBuffer, uint16_t quantity)
 {
   return Wire.requestFrom((uint8_t)address, (uint8_t *) acceptBuffer, (uint16_t)quantity, (uint8_t)true);

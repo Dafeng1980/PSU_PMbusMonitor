@@ -31,11 +31,15 @@ static uint8_t ps_patner_address;
 const char* ssid = "FAIOT";       // Enter your WiFi name
 const char* password = "20212021";    // Enter WiFi password
 const char* mqtt_server = "192.168.12.1";
+const uint16_t mqtt_port =  1883;
+//const char *mqtt_broker = "broker.emqx.io";  // Free Public MQTT broker 
+//const int mqtt_port = 1883; //There is no privacy protection for public access broker.
+                              //Any device can publish and subscribe to topics on it.
 const char* clientID = "device1";
 const char* mqtt_user = "dfiot";
 const char* mqtt_password = "123abc";
-const uint16_t mqtt_port =  1883;
-const int SDA_PIN = 0;       //for ESP-01s SDA = 0; SDC = 2;
+
+const int SDA_PIN = 0;        //ESP-01S SDA = 0; SDC = 2;
 const int SCL_PIN = 2;       // ESP-12F SDA = 4; SCl = 5;
 
 unsigned long lastMsg = 0;
@@ -52,8 +56,7 @@ static bool wiset = true;
 
 WiFiClient eClient;
 PubSubClient client(mqtt_server, mqtt_port, eClient);
-//const char *mqtt_broker = "broker.emqx.io";
-//const int mqtt_port = 1883;
+
 
 void setup() {
   Wire.begin(SDA_PIN, SCL_PIN);
@@ -169,26 +172,20 @@ void reconnect() {
   // Loop until we're reconnected
   //client.connect(clientID, mqtt_user, mqtt_password);
   while (!client.connected()) {
-    //trc(F("MQTT connection...")); //F function enable to decrease sram usage
-     Serial.print("Attempting MQTT connection...");
-    // Attempt to connect
+     Serial.print("Attempting MQTT connection..."); // Attempt to connect   
      String clientId = "ESP8266Client-";
      clientId += String(random(0xffff), HEX);
     if (client.connect((clientId.c_str()), mqtt_user, mqtt_password)) {
      // if (client.connect(clientId.c_str())) {
-      Serial.println("connected");
-      //trc(F("Connected to broker"));
-      // Once connected, publish an announcement...
-      client.publish("outTopic", "hello world");
-      // ... and resubscribe
-      client.subscribe("inTopic");
+      Serial.println("connected to broker");
+      client.publish("outTopic", "hello world");  // Once connected, publish an announcement...   
+      client.subscribe("inTopic"); // ... and resubscribe
     }
     else {
       Serial.print("failed, rc=");
       Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
-      // Wait 5 seconds before retrying
-      delay(5000);
+      Serial.println(" try again in 5 seconds");      
+      delay(5000); // Wait 5 seconds before retrying
     }
   }
 }

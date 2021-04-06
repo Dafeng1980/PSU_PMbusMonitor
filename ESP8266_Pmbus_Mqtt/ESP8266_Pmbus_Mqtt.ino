@@ -31,7 +31,7 @@ const char* ssid = "FAIOT";       // Enter your WiFi name
 const char* password = "20212021";    // Enter WiFi password
 const char* mqtt_server = "192.168.12.1";  //Local Raspberry-Pi MQTT server(WiFi hotspot).
 const uint16_t mqtt_port =  1883;
-//const char *mqtt_broker = "broker.emqx.io";  //for Free Public MQTT broker  
+//const char *mqtt_broker = "broker.emqx.io";  // Free Public MQTT broker  
 //const int mqtt_port = 1883;  //There is no privacy protection for public access broker.
                               //Any device can publish and subscribe to topics on it.
 const char* clientID = "device1";

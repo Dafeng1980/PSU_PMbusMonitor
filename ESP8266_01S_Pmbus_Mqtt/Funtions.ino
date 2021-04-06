@@ -2,17 +2,14 @@
 void i2cdetects(uint8_t first, uint8_t last) {
   uint8_t i, address, error;
   char buff[10];
-  // table header
-  Serial.print("   ");
+  Serial.print("   ");    // table header
   for (i = 0; i < 16; i++) {
     //Serial.printf("%3x", i);
     sprintf(buff, "%3x", i);
     Serial.print(buff);
   }
-
   // table body
-  // addresses 0x00 through 0x77
-  for (address = 0; address <= 127; address++) {
+  for (address = 0; address <= 127; address++) {    // addresses 0x00 through 0x77
     if (address % 16 == 0) {
       //Serial.printf("\n%#02x:", address & 0xF0);
       sprintf(buff, "\n%02x:", address & 0xF0);
@@ -21,21 +18,17 @@ void i2cdetects(uint8_t first, uint8_t last) {
     if (address >= first && address <= last) {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
-      if (error == 0) {
-        // device found
+      if (error == 0) {  // device found       
         //Serial.printf(" %02x", address);
         sprintf(buff, " %02x", address);
         Serial.print(buff);
-      } else if (error == 4) {
-        // other error
+      } else if (error == 4) { // other error       
         Serial.print(" XX");
-      } else {
-        // error = 2: received NACK on transmit of address
-        // error = 3: received NACK on transmit of data
+      } else {  // error = 2: received NACK on transmit of address
+                // error = 3: received NACK on transmit of data        
         Serial.print(" --");
       }
-    } else {
-      // address not scanned
+    } else {  // address not scanned     
       Serial.print("   ");
     }
   }
@@ -44,7 +37,7 @@ void i2cdetects(uint8_t first, uint8_t last) {
 
 void printpmbusData(struct PowerPmbus busData)
 {
-    Serial.print(F("PMBUS ADDRESS: 0x"));
+    Serial.print(F("PMBUS ADDRESS: 0x"));    //F function enable to decrease sram usage
     Serial.println(busData.i2cAddr, HEX);   
     Serial.println(F("INPUT: "));
     Serial.print(F("Volt : "));
@@ -168,7 +161,6 @@ void publishPmbusData(struct PowerPmbus busData){
 //  Serial1.print("Publish message: ");
 //  Serial1.println(msg);
   client.publish("pmbus/status/word", msg);
-  //client.subscribe("inTopic");
 }
 
 void printBits(byte myByte){
@@ -188,9 +180,8 @@ void printchar(uint8_t *values, uint8_t bsize){
 }
 
 void pmbusdetects(){
-  uint8_t i, address, error;
-  // table header
-  Serial.print("   ");
+  uint8_t i, address, error; 
+  Serial.print("   ");   // table header
   for (i = 8; i < 16; i++) {
     Serial.printf("%3x", i);
   }
@@ -199,8 +190,7 @@ void pmbusdetects(){
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
     //  if (address == 92) error = 0;
-      if (error == 0) {
-        // device found
+      if (error == 0) {  // device found        
         n++;
         if(n == 1) ps_i2c_address = address;
         else ps_i2c_address = PS_ADDRESS;
@@ -210,9 +200,8 @@ void pmbusdetects(){
       } else if (error == 4) {
         // other error
         Serial.print(" XX");
-      } else {
-        // error = 2: received NACK on transmit of address
-        // error = 3: received NACK on transmit of data
+      } else { // error = 2: received NACK on transmit of address
+               // error = 3: received NACK on transmit of data        
         Serial.print(" --");
         delay(20);
       } 
