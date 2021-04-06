@@ -1,6 +1,6 @@
-# ESP-01 Board for PMbus
+# ESP-01S Board for PMbus
 
-Base on ESP-01 Board (Very low cost Board!!) 
+Base on ESP-01S Board (Very low cost Board!!) and Andunio IDE(open-source Software)
 
 [Serial USB Terminal APP](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en "https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en") is a line-oriented terminal / console app for microcontrollers, arduinos and other devices with a serial / UART interface connected with a USB to serial converter to your android device    <br/>
 
