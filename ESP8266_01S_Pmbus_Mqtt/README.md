@@ -2,11 +2,11 @@
 
 * Base on ESP-01S Board (Low Cost Board!!) <br/>
 
-* install the [Andunio IDE](https://www.arduino.cc/en/software "https://www.arduino.cc/en/software") <br/>
+* Install the [Andunio IDE](https://www.arduino.cc/en/software "https://www.arduino.cc/en/software") <br/>
 
-* add the [ESP8266 Arduino core & Libraries](https://github.com/esp8266/Arduino "https://github.com/esp8266/Arduino") <br/>
+* Add the [ESP8266 Arduino core & Libraries](https://github.com/esp8266/Arduino "https://github.com/esp8266/Arduino") <br/>
 
-* install two apps on the phone:   [Serial USB Terminal APP](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en "https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en") is a line-oriented terminal / console app for microcontrollers, arduinos and other devices with a serial / UART interface connected with a USB to serial converter to your android device. and
+* Install two apps on the phone:   [Serial USB Terminal APP](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en "https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en") is a line-oriented terminal / console app for microcontrollers, arduinos and other devices with a serial / UART interface connected with a USB to serial converter to your android device. &
 [MQTT Dash APP](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en "https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en") IoT  <br/>
 
  ### ESP-01S:  <br/>
