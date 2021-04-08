@@ -6,11 +6,9 @@
 [MQTT Dash APP](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en "https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en") Iot <br/>
 
  ### ESP-12F: <br/>
- 
-![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-12F.jpg) ![image] <br/>
+![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-12F.jpg)  <br/>
 
 ### MQTT Broker Server :  <br/>
-
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/Mqtt_server.jpg)  <br/> 
 
 
