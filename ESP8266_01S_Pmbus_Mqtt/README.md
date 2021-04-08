@@ -6,22 +6,23 @@ Base on ESP-01S Board (Low Cost Board!!) and Andunio IDE(open-source Software)
 
 [MQTT Dash APP](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en "https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en") IoT  <br/>
 
- ### ESP-01S: <br/>
+ ### ESP-01S:  <br/>
  
-![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-01s.jpg) ![image] <br/>
+![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-01s.jpg)   <br/> <br/>
 
-### Pmbus via Serial Connected:  <br/>
+### Monitor PMbus data with Serial USB Terminal APP [https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en)   <br/>
 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/connected.jpg)  <br/> <br/>
 
-### PMbus displayed on Android smartphone MQTT:  <br/>
+![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/pmbus_Serial.png)   <br/> <br/>
+
+### Monitor PMbus data with MQTT Dash APP:  <br/>
 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/Mqtt_Phone.jpg)  
 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/pmbus_Mqtt.png)  <br/> <br/>
 
-### PMbus displayed on Android smartphone SERIAL:  <br/>
 
-![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/pmbus_Serial.png)   <br/> <br/>
+
 
 
