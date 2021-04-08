@@ -1,4 +1,4 @@
-# ESP-01S Board for PMbus
+# ESP-01S Board for monitoring PMbus data
 
 Base on ESP-01S Board (Low Cost Board!!) <br/>
 
