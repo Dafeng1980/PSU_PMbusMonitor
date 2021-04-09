@@ -1,8 +1,9 @@
 # Mega Nano Board
 
-Base on [Mega128L Nano Board](https://github.com/Dafeng1980/AtmegaBoards), Arduino Compatible.  <br/> 
- [PMbus libraries](https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html "https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html") in Linduino:  <br/>
- [Serial USB Terminal APP](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en "https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en") for Android    <br/>
+* Base on [Mega128L Nano Board](https://github.com/Dafeng1980/AtmegaBoards).  <br/>
+ * Arduino Compatible.  <br/> 
+ * [PMbus libraries](https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html "https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html") in Linduino:  <br/>
+ * [Serial USB Terminal APP](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en "https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en") for Android Phone.   <br/>
 
  ### PMbus with Serial: <br/>
  
