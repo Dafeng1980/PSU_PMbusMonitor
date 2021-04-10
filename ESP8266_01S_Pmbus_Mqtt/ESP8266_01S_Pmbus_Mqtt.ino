@@ -26,6 +26,7 @@ static struct PowerPmbus
 }pd;
 
 uint8_t n = 0 ;
+static uint8_t key = 0;
 static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
 const char* ssid = "FAIOT";       // Enter your WiFi name
@@ -35,11 +36,11 @@ const uint16_t mqtt_port =  1883;
 //const char *mqtt_broker = "broker.emqx.io";  // Free Public MQTT broker 
 //const int mqtt_port = 1883; //There is no privacy protection for public access broker.
                               //Any device can publish and subscribe to topics on it.
-const char* clientID = "device1";
+const char* clientID = "zhsnpi1fdevice001";
 const char* mqtt_user = "dfiot";
 const char* mqtt_password = "123abc";
 
-const int SDA_PIN = 0;        //ESP-01S SDA = 0; SDC = 2;
+const int SDA_PIN = 0;        //ESP-01S SDA = 0; SCL = 2;
 const int SCL_PIN = 2;       // ESP-12F SDA = 4; SCl = 5;
 
 unsigned long lastMsg = 0;
@@ -70,14 +71,14 @@ void setup() {
   Serial.println("MQTT Broker Connected. \n ");
   }  
   delay(100);
+ // scani2c = false;
   i2cdetects(0x03, 0x7F);
   
   while(scani2c){
     pmbusdetects();
     delay(50);
     if(n > 0) break;
-    }
-    
+    }    
  Serial.printf("\nPMBUSADDRESS %#02x:\n", ps_i2c_address);
  
   if(smbus_waitForAck(ps_i2c_address, 0x00))
@@ -100,7 +101,7 @@ void loop() {
   if (!client.connected()) {
     reconnect();
   }
-    client.subscribe("pmbus/get");
+    client.subscribe("pmbus/set");
     client.loop();
  } 
   
@@ -108,8 +109,19 @@ void loop() {
   if (now - lastMsg >= 333) {
       lastMsg = now;
     if(readpmbusdata()){
+      if(0 != pd.statusWord) pmbusStatus();      
+      if(0 == count%5) printpmbusData(pd);
       if(wifistatus) publishPmbusData(pd);
-      if(count%5 == 0) printpmbusData(pd);      
+      if(key == 1){
+        read_calibrationOutputvolt();
+        delay(100);
+        read_calibrationCount();
+        delay(100);
+        key = 0;
+        if(wifistatus){
+          client.publish("pmbus/set", "0");      
+        }
+      }
     } 
     count++;  
   }
@@ -158,13 +170,17 @@ void callback(char* topic, byte* payload, unsigned int length) {
   }
   Serial.println();
   String topicStr(topic);
-  if (topicStr.compareTo("pmbus/get") == 0)
+  if (topicStr.compareTo("pmbus/set") == 0)
   {
-    if ((char)payload[0] == '0')
-    Serial.println(":::::0:::::");
-    if ((char)payload[0] == '1')
-    Serial.println(":::::1:::::");
-    delay(100);
+    if ((char)payload[0] == '0'){
+    key = 0;
+    Serial.println(": key = 0 :");
+    }
+    if ((char)payload[0] == '1'){
+    key = 1;
+    Serial.println(": key = 1 :");
+    }
+    delay(10);
   }  
 }
 

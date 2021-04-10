@@ -210,12 +210,196 @@ void pmbusdetects(){
   Serial.println(n);
 }
 
+void pmbusStatus()
+{
+    uint16_t w_val;
+    uint8_t msb,lsb,io,in,tm,fa,vo,cm;
+    Serial.println(F("========= READ ALL STATUS =========="));
+    Serial.println(F(" "));
+    w_val = pd.statusWord;
+    Serial.print(F("STATUS WORD 0x"));
+    Serial.println(w_val, HEX);
+    msb = w_val >> 8;
+    lsb = w_val & 0xFF;
+    Serial.print(F(" 0B "));
+    printBits(msb);
+    Serial.print(F("  HIGH: 0x"));
+    Serial.print(msb, HEX);
+    Serial.print(F("     0B "));
+    printBits(lsb);
+    Serial.print(F("   LOW: 0x"));
+    Serial.println(lsb, HEX);
+    if(msb & 0x80){
+        vo = pmbus_readStatusVout(ps_i2c_address);
+        Serial.print(F("STATUS_VOUT 0B "));
+        printBits(vo);
+        Serial.print(F("    : 0x"));
+        Serial.println(vo, HEX);
+        if(vo & 0x80)
+        Serial.println(F("STATUS_VOUT_OV_FAULT !! "));
+        if(vo & 0x10)
+        Serial.println(F("STATUS_VOUT_UV_FAULT !! "));
+     
+    }
+
+    if(msb & 0x40){
+        io = pmbus_readStatusIout(ps_i2c_address);
+        Serial.print(F("STATUS_IOUT 0B "));
+        printBits(io);
+        Serial.print(F("    : 0x"));
+        Serial.println(io, HEX);
+        if(io & 0x80)
+        Serial.println(F("STATUS_IOUT_OC_FAULT !! "));
+        if(io & 0x20)
+        Serial.println(F("STATUS_IOUT_OC_WARNING !! "));
+        if(io & 0x02)
+        Serial.println(F("STATUS_POUT_OP_FAULT !! "));
+        if(io & 0x01)
+        Serial.println(F("STATUS_POUT_OP_WARNING !! ")); 
+    }
+
+    if(msb & 0x20){
+        in = pmbus_readStatusInput(ps_i2c_address);
+        Serial.print(F("STATUS_INPUT 0B "));
+        printBits(in);
+        Serial.print(F("    : 0x"));
+        Serial.println(in, HEX);
+        if(in & 0x20)
+        Serial.println(F("STATUS_VIN_UV_WARNING !! "));
+        if(in & 0x10)
+        Serial.println(F("STATUS_VIN_UV_FAULT !! "));
+        if(in & 0x08)
+        Serial.println(F("STATUS_UNIT_OFF_FOR_INSUFFICIENT_INPUT !! "));
+        if(in & 0x02)
+        Serial.println(F("STATUS_IIN_OVER_CURRENT_WARNING !! ")); 
+        if(in & 0x01)
+        Serial.println(F("STATUS_PIN_OVER_POWER_WARNING !! ")); 
+    }
+
+    if(msb & 0x08)  Serial.println(F("STATUS_POWER_GOOD#_FAULT !! "));
+
+    if(msb & 0x04){
+      fa = pmbus_readStatusFan(ps_i2c_address);
+        Serial.print(F("STATUS_FAN 0B "));
+        printBits(fa);
+        Serial.print(F("    : 0x"));
+        Serial.println(fa, HEX);
+        if(fa & 0x80)
+        Serial.println(F("STATUS_FAN_1_FAULT !! "));
+        if(fa & 0x40)
+        Serial.println(F("STATUS_FAN_2_FAULT !! "));
+        if(fa & 0x20)
+        Serial.println(F("STATUS_FAN_1_WARNING !! "));
+        if(fa & 0x10)
+        Serial.println(F("STATUS_FAN_1_WARNING !! "));
+    }
+
+    if(msb & 0x02)  Serial.println(F("STATUS_OTHERS_WARNING !! "));
+    
+    if(lsb & 0x40)  Serial.println(F("STATUS_PS_OFF !! "));
+    if(lsb & 0x20)  Serial.println(F("STATUS_MAIN_OUTPUT_OV_FAULT !! "));
+
+    if(lsb & 0x10){
+        io = pmbus_readStatusIout(ps_i2c_address);
+        Serial.print(F("STATUS_IOUT 0B "));
+        printBits(io);
+        Serial.print(F("    : 0x"));
+        Serial.println(io, HEX);
+        if(io & 0x80)
+        Serial.println(F("STATUS_IOUT_OC_FAULT !! "));
+        if(io & 0x40)
+        Serial.println(F("STATUS_IOUT_OC_LV_FAULT !! "));  //When low voltage due to OC is detected.
+        if(io & 0x20)
+        Serial.println(F("STATUS_IOUT_OC_WARNING !! "));
+        if(io & 0x08)
+        Serial.println(F("STATUS_ISHARE_FAULT !! "));
+        if(io & 0x02)
+        Serial.println(F("STATUS_POUT_OP_FAULT !! "));
+        if(io & 0x01)
+        Serial.println(F("STATUS_POUT_OP_WARNING !! ")); 
+
+    }
+    
+    if(lsb & 0x08){
+        in = pmbus_readStatusInput(ps_i2c_address);
+        Serial.print(F("STATUS_INPUT 0B "));
+        printBits(in);
+        Serial.print(F("    : 0x"));
+        Serial.println(in, HEX);
+        if(in & 0x80)
+        Serial.println(F("STATUS_VIN_OV_FAULT !! "));
+        if(in & 0x40)
+        Serial.println(F("STATUS_VIN_OV_WARNING !! "));
+        if(in & 0x20)
+        Serial.println(F("STATUS_VIN_UV_WARNING !! "));
+        if(in & 0x10)
+        Serial.println(F("STATUS_VIN_UV_FAULT !! "));
+        if(in & 0x08)
+        Serial.println(F("STATUS_UNIT_OFF_FOR_INSUFFICIENT_INPUT !! "));
+        if(in & 0x02)
+        Serial.println(F("STATUS_IIN_OVER_CURRENT_WARNING !! ")); 
+        if(in & 0x01)
+        Serial.println(F("STATUS_PIN_OVER_POWER_WARNING !! ")); 
+    }
+
+    if(lsb & 0x04){
+        tm = pmbus_readStatusTemp(ps_i2c_address);
+        Serial.print(F("STATUS_TEMPERATURE 0B "));
+        printBits(tm);
+        Serial.print(F("    : 0x"));
+        Serial.println(tm, HEX);
+        if(tm & 0x80)
+        Serial.println(F("STATUS_OT_FAULT !! "));
+        if(tm & 0x40)
+        Serial.println(F("STATUS_OT_WARNING !! "));
+    }
+    
+    if(lsb & 0x02){
+      cm = pmbus_readStatusCml(ps_i2c_address);
+      Serial.print(F("STATUS_CML 0B "));
+      printBits(cm);
+      Serial.print(F("    : 0x"));
+      Serial.println(cm, HEX);
+      if(cm & 0x80)
+      Serial.println(F("STATUS_CML_InvalidCMD !! "));
+      if(cm & 0x40)
+      Serial.println(F("STATUS_CML_InvalidData !! "));
+      if(cm & 0x20)
+      Serial.println(F("STATUS_CML_PEC_Fault !! "));
+      if(cm & 0x08) 
+      Serial.println(F("STATUS_CML_Processor_Fault !! "));
+      if(cm & 0x02) 
+      Serial.println(F("STATUS_CML_COMM_Fault !! "));
+      if(cm & 0x01) 
+      Serial.println(F("STATUS_CML_MEM_Logic_Fault !! "));
+    }
+    Serial.println(F(" "));
+    if(wifistatus){
+       tm = pmbus_readStatusTemp(ps_i2c_address);
+       fa = pmbus_readStatusFan(ps_i2c_address);
+       cm = pmbus_readStatusCml(ps_i2c_address);
+       snprintf (msg, MSG_BUFFER_SIZE, "Fan:0x%02x Temp:0x%02x Cml:0x%02x", fa, tm, cm);
+       client.publish("pmbus/status/fanTempCml", msg);
+       vo = pmbus_readStatusVout(ps_i2c_address);
+       io = pmbus_readStatusIout(ps_i2c_address);
+       in = pmbus_readStatusInput(ps_i2c_address);
+       snprintf (msg, MSG_BUFFER_SIZE, "Vout:0x%02x Iout:0x%02x Input:0x%02x", vo, io, in);
+       client.publish("pmbus/status/voutIoutInput", msg);
+    }
+}
 
 bool readpmbusdata()
 {   
     bool ret = true;
   if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {
       Serial.println("PMBUS Polling Fail \n");
+      if(wifistatus){
+        if(count%6 == 0){
+            ++value;     
+            snprintf (msg, MSG_BUFFER_SIZE, "PMBUS Polling Fail  Loop#%ld", value);
+            client.publish("pmbus/status", msg);
+        }
+      }
       return ret = false;
     } 
      pd.inputV = pmbus_readVin(ps_i2c_address);

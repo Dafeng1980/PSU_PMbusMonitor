@@ -159,3 +159,45 @@ uint16_t pmbus_readStatusWord(uint8_t address)
   status_word = smbus_readWord(address, 0x79);  //STATUS_WORD = 0x79;
   return status_word;
 }
+
+uint8_t pmbus_readStatusVout(uint8_t address)
+{
+  uint8_t status_byte;
+  status_byte = smbus_readByte(address, 0x7A);  //STATUS_VOUT = 0x7A;
+  return status_byte;
+}
+
+uint8_t pmbus_readStatusIout(uint8_t address)
+{
+  uint8_t status_byte;
+  status_byte = smbus_readByte(address, 0x7B);  //STATUS_IOUT = 0x7B;
+  return status_byte;
+}
+
+uint8_t pmbus_readStatusInput(uint8_t address)
+{
+  uint8_t status_byte;
+  status_byte = smbus_readByte(address, 0x7C);  //STATUS_INPUT = 0x7C;
+  return status_byte;
+}
+
+uint8_t pmbus_readStatusTemp(uint8_t address)
+{
+  uint8_t status_byte;
+  status_byte = smbus_readByte(address, 0x7D);  //STATUS_TEMP = 0x7D;
+  return status_byte;
+}
+
+uint8_t pmbus_readStatusCml(uint8_t address)
+{
+  uint8_t status_byte;
+  status_byte = smbus_readByte(address, 0x7E);  //STATUS_CML = 0x7E;
+  return status_byte;
+}
+
+uint8_t pmbus_readStatusFan(uint8_t address)
+{
+  uint8_t status_byte;
+  status_byte = smbus_readByte(address, 0x81);  //STATUS_FAN = 0x81;
+  return status_byte;
+}
