@@ -1,4 +1,60 @@
 
+uint8_t read_data()
+{
+  uint8_t index = 0; //index to hold current location in ui_buffer
+  int c; // single character used to store incoming keystrokes
+  while (index < UI_BUFFER_SIZE-1)
+  {
+    c = Serial.read(); //read one character
+    if (((char) c == '\r') || ((char) c == '\n')) break; // if carriage return or linefeed, stop and return data
+    if ( ((char) c == '\x7F') || ((char) c == '\x08') )   // remove previous character (decrement index) if Backspace/Delete key pressed      index--;
+    {
+      if (index > 0) index--;
+    }
+    else if (c >= 0)
+    {
+      ui_buffer[index++]=(char) c; // put character into ui_buffer
+    }
+  }
+  ui_buffer[index]='\0';  // terminate string with NULL
+
+  if ((char) c == '\r')    // if the last character was a carriage return, also clear linefeed if it is next character
+  {
+    delay(10);  // allow 10ms for linefeed to appear on serial pins
+    if (Serial.peek() == '\n') Serial.read(); // if linefeed appears, read it and throw it away
+  }
+
+  return index; // return number of characters, not including null terminator
+}
+
+int32_t read_int()
+{
+  int32_t data;
+  read_data();
+  if (ui_buffer[0] == 'm')
+    return('m');
+  if ((ui_buffer[0] == 'B') || (ui_buffer[0] == 'b'))
+  {
+    data = strtol(ui_buffer+1, NULL, 2);
+  }
+  else
+    data = strtol(ui_buffer, NULL, 0);
+  return(data);
+}
+
+// Read a string from the serial interface.  Returns a pointer to the ui_buffer.
+char *read_string()
+{
+  read_data();
+  return(ui_buffer);
+}
+
+int8_t read_char()
+{
+  read_data();
+  return(ui_buffer[0]);
+}
+
 void i2cdetects(uint8_t first, uint8_t last) {
   uint8_t i, address, error;
   char buff[10];
@@ -402,6 +458,16 @@ bool readpmbusdata()
       }
       return ret = false;
     } 
+    if(pmbuswrite){
+      pmbus_writeProtect(ps_i2c_address, 0x00); //0x00 pmbus write enable;
+      pmbuswrite = false;
+      stbyflag = true;
+      Serial.println("PMBUS Write En Set \n");
+      if(wifistatus){
+      client.publish("pmbus/set", "PMbus_write En");
+      }
+      pmbus_clearFaults(ps_i2c_address);
+    }
      pd.inputV = pmbus_readVin(ps_i2c_address);
      pd.inputA = pmbus_readIin(ps_i2c_address);
      pd.outputV = pmbus_readVout(ps_i2c_address);
@@ -412,11 +478,13 @@ bool readpmbusdata()
      pd.temp2 = pmbus_readItemp(ps_i2c_address);        //temp sensor 0x8E  
      pd.temp3 = pmbus_readMtemp(ps_i2c_address);        //temp sensor 0x8F  
      pd.fanSpeed = pmbus_readFanSpeed1(ps_i2c_address);
-     pd.statusWord = pmbus_readStatusWord(ps_i2c_address); 
+     pd.statusWord = pmbus_readStatusWord(ps_i2c_address);
+     if(stbyflag){
      pmbus_setPage(ps_i2c_address,1);                    //set Page to 1, read 12Vsb 
      pd.outputVsb = pmbus_readVout(ps_i2c_address);
      pd.outputAsb = pmbus_readIout(ps_i2c_address);
      pmbus_setPage(ps_i2c_address,0);
+     }
      pd.i2cAddr = ps_i2c_address;
      return ret;  
 }

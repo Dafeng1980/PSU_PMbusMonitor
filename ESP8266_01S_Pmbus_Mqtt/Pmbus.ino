@@ -71,6 +71,11 @@ uint8_t pmbus_getPage(uint8_t address)
    return smbus_readByte(address, 0x00);  //PAGE = 0x00;
 }
 
+void pmbus_clearFaults(uint8_t address)
+{
+  smbus_sendByte(address, 0x03);  //CLEAR_FAULTS = 0x03;
+}
+
 float pmbus_readVout(uint8_t address)
 {
   int8_t vout_mode;

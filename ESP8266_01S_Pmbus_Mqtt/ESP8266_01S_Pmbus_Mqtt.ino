@@ -6,6 +6,7 @@
 #define PS_ADDRESS 0x58
 #define PS_PARTNER_ADDRESS 0x5E
 #define MSG_BUFFER_SIZE  (50)
+#define UI_BUFFER_SIZE 64
 
 static struct PowerPmbus
 {
@@ -26,6 +27,7 @@ static struct PowerPmbus
 }pd;
 
 uint8_t n = 0 ;
+char ui_buffer[UI_BUFFER_SIZE];
 static uint8_t key = 0;
 static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
@@ -54,6 +56,8 @@ static boolean Protocol = true;   // If true, endTransmission() sends a stop mes
 static boolean scani2c = true;
 static bool wifistatus = true;
 static bool wiset = true;
+static bool pmbuswrite = false;
+static bool stbyflag = false;
 
 WiFiClient eClient;
 PubSubClient client(mqtt_server, mqtt_port, eClient);
@@ -97,6 +101,7 @@ void setup() {
 }
 
 void loop() {
+  char readval;
   if (wifistatus){
   if (!client.connected()) {
     reconnect();
@@ -104,6 +109,32 @@ void loop() {
     client.subscribe("pmbus/set");
     client.loop();
  } 
+
+    if (Serial.available())                //! Serial input read
+  {
+      readval = read_char();                     //! Reads the user command
+      Serial.println((char)readval);
+    if ((char)readval == '0'){
+      key = 0;
+      Serial.println(": key = 0 :");
+    }
+    if ((char)readval == '1'){
+      key = 1;
+      Serial.println(": key = 1 :");
+    }
+    if ((char)readval == '2'){
+      key = 2;
+      Serial.println(": key = 2 :");     
+    }
+    if ((char)readval == '3'){
+      key = 3;
+      Serial.println(": key = 3 :");     
+    }
+    if ((char)readval == 'w'){
+      pmbuswrite = true;
+      Serial.println(": Write Enable :");     
+    }
+  } 
   
   unsigned long now = millis(); 
   if (now - lastMsg >= 333) {
@@ -121,6 +152,16 @@ void loop() {
         if(wifistatus){
           client.publish("pmbus/set", "0");      
         }
+      }
+      if(key == 2){
+        pmbus_blueLed(ps_i2c_address, 0x01);
+        Serial.println(": Blue LED On :");
+        key = 0;
+      }
+      if(key == 3){
+        pmbus_blueLed(ps_i2c_address, 0x00);
+        Serial.println(": Blue LED OFF :");
+        key = 0;
       }
     } 
     count++;  
@@ -173,12 +214,24 @@ void callback(char* topic, byte* payload, unsigned int length) {
   if (topicStr.compareTo("pmbus/set") == 0)
   {
     if ((char)payload[0] == '0'){
-    key = 0;
-    Serial.println(": key = 0 :");
+        key = 0;
+        Serial.println(": key = 0 :");
     }
     if ((char)payload[0] == '1'){
-    key = 1;
-    Serial.println(": key = 1 :");
+        key = 1;
+        Serial.println(": key = 1 :");
+    }
+    if ((char)payload[0] == '2'){
+        key = 2;
+        Serial.println(": key = 2 :");
+    }
+    if ((char)payload[0] == '3'){
+        key = 3;
+        Serial.println(": key = 3 :");
+    }
+    if ((char)payload[0] == 'w'){
+        pmbuswrite = true;
+        Serial.println(": Write Enable :");
     }
     delay(10);
   }  
