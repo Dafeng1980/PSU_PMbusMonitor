@@ -74,6 +74,7 @@ void i2cdetects(uint8_t first, uint8_t last) {
     if (address >= first && address <= last) {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
+      delay(2);
       if (error == 0) {  // device found       
         //Serial.printf(" %02x", address);
         sprintf(buff, " %02x", address);
@@ -93,6 +94,7 @@ void i2cdetects(uint8_t first, uint8_t last) {
 
 void printpmbusData(struct PowerPmbus busData)
 {
+    Serial.println(" ");
     Serial.print(F("PMBUS ADDRESS: 0x"));    //F function enable to decrease sram usage
     Serial.println(busData.i2cAddr, HEX);   
     Serial.println(F("INPUT: "));
@@ -172,10 +174,10 @@ void publishPmbusData(struct PowerPmbus busData){
       Serial.print("Vshare= ");
       Serial.println(msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
-     snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
-     client.publish("pmbus/fru/HWversion", msg);
-     snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
-     client.publish("pmbus/fru/BLversion", msg);
+//     snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
+//     client.publish("pmbus/fru/HWversion", msg);
+//     snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
+//     client.publish("pmbus/fru/BLversion", msg);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
   client.publish("pmbus/input/Volt", msg);
@@ -235,6 +237,26 @@ void printchar(uint8_t *values, uint8_t bsize){
    Serial.println();
 }
 
+void printFru(uint8_t first, uint8_t last, uint8_t *values) {
+        int i,address;
+        Serial.print("    ");
+        for (i = 0; i < 16; i++) {
+                Serial.printf("%3x", i);
+            }
+        for (address = 0; address <= 255; address++) {   
+          if (address % 16 == 0) {
+//              Serial.printf("\n%#02x:", address & 0xF0);
+                Serial.printf("\n%02xh:", address & 0xF0);
+              }              
+          if (address >= first && address <= last) {
+            Serial.printf(" %02x", values[address]);
+            delay(10);
+          }
+           else Serial.print("   ");
+            }
+      Serial.println("\n");
+}
+
 void pmbusdetects(){
   uint8_t i, address, error; 
   Serial.print("   ");   // table header
@@ -253,8 +275,7 @@ void pmbusdetects(){
         if(n == 2) ps_patner_address = address;
         else ps_patner_address = PS_PARTNER_ADDRESS;
         Serial.printf(" %02x", address);       
-      } else if (error == 4) {
-        // other error
+      } else if (error == 4) { // other error
         Serial.print(" XX");
       } else { // error = 2: received NACK on transmit of address
                // error = 3: received NACK on transmit of data        
@@ -262,8 +283,8 @@ void pmbusdetects(){
         delay(20);
       } 
   }
-    Serial.println("\n");
-  Serial.println(n);
+  Serial.println("\n");
+//  Serial.println(n);
 }
 
 void pmbusStatus()
@@ -488,3 +509,39 @@ bool readpmbusdata()
      pd.i2cAddr = ps_i2c_address;
      return ret;  
 }
+
+uint8_t m24c32readbyte(int address, uint16_t offset)
+{
+  uint8_t data;
+  Wire.beginTransmission(address);
+  Wire.write((int)(offset >> 8));
+  Wire.write((int)(offset & 0xFF));
+  Wire.endTransmission(I2C_NOSTOP);
+  Wire.requestFrom(address, 1);
+  data = Wire.read();
+  return data;
+}
+
+void m24c32readbytes(int address, uint16_t offset, int count, uint8_t * dest)
+{
+  Wire.beginTransmission(address);
+  Wire.write((int)(offset >> 8));
+  Wire.write((int)(offset & 0xFF));
+  Wire.endTransmission(I2C_NOSTOP);
+  uint8_t i = 0;
+  Wire.requestFrom(address, count);
+  while (Wire.available()) {
+    dest[i++] = Wire.read();
+  }
+}
+ uint16_t eepCheckSum (uint8_t *pBuffer, uint16_t len)
+ {
+     uint16_t sum;
+     int i;  
+     sum = 0;
+     for (i = 0; i < len; i++) {
+         sum += pBuffer[i];
+     }  
+     sum = 0x00FF & (~sum + 1);  
+     return (sum);
+ }
