@@ -78,45 +78,25 @@ void setup() {
   Serial.println("MQTT Broker Connected. \n ");
   }  
   delay(100);
-//  scani2c = false;
-  i2cdetects(0x03, 0x7F);
-  
-  while(scani2c){
-    pmbusdetects();
-    delay(50);
-    if(n > 0) break;
-    }    
+ deviceAddrset();
+ getversion();
  Serial.printf("\nPMBUSADDRESS %#02x:\n", ps_i2c_address);
  m24c32_address = (ps_i2c_address - 0x58) + 0x50;
- Serial.printf("EEPROMADDRESS %#02x:\n", m24c32_address);
- 
-  if(smbus_waitForAck(ps_i2c_address, 0x00))
-  {
-     readFw_version(ps_i2c_address, ver);
-     readBootloader_version(ps_i2c_address, ver+3);
-     Serial.printf("\n  Firmware_REV: %02x%02x%02x \n", ver[0],ver[1],ver[2]);
-     Serial.printf("Bootloader_REV: %02x%02x%02x \n", ver[3],ver[4],ver[5]);
-     if(wifistatus){ 
-     snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
-     client.publish("pmbus/fru/HWversion", msg);
-     snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
-     client.publish("pmbus/fru/BLversion", msg);
-    }
-  } 
+ Serial.printf("EEPROMADDRESS %#02x:\n", m24c32_address); 
 }
 
 void loop() {
   char readval;
-  uint16_t checksum;
+    
   if (wifistatus){
   if (!client.connected()) {
     reconnect();
-  }
-    client.subscribe("pmbus/set");
+  }    
     client.loop();
+    client.subscribe("pmbus/set");
  } 
 
-    if (Serial.available())                //! Serial input read
+  if (Serial.available())                //! Serial input read
   {
       readval = read_char();                     //! Reads the user command
       Serial.println((char)readval);
@@ -144,10 +124,10 @@ void loop() {
       pmbuswrite = true;
       Serial.println(": Write Enable :");     
     }
-  } 
+ } 
   
   unsigned long now = millis(); 
-  if (now - lastMsg >= 333) {
+  if (now - lastMsg >= 666) {
       lastMsg = now;
     if(readpmbusdata()){
       if(0 != pd.statusWord) pmbusStatus();      
@@ -155,74 +135,24 @@ void loop() {
       if(wifistatus) publishPmbusData(pd);
       
       if(key == 1){
-            read_calibrationOutputvolt();
-            delay(100);
-            read_calibrationCount();
-            delay(100);
-            key = 0;
-            if(wifistatus){
-                client.publish("pmbus/set", "0");      
-            }
+         readCalibration();
+         key = 0;
       }
       if(key == 2){
-        pmbus_blueLed(ps_i2c_address, 0x01);
-        Serial.println(": Blue LED On :");
+        testBlueLedOn();
         key = 0;
       }
       if(key == 3){
-        pmbus_blueLed(ps_i2c_address, 0x00);
-        Serial.println(": Blue LED OFF :");
+        testBlueLedOff();
         key = 0;
       }
       if(key == 4){
-        m24c32readbytes(m24c32_address, 0, 256, eepbuffer);
-        printFru(0, 0xFF , eepbuffer);
-        checksum = eepCheckSum(eepbuffer, 192);
-        Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
-        Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
-        if(wifistatus){
-                snprintf (msg, MSG_BUFFER_SIZE, "Ca: 0x%04x Re: 0x%02x%02x", checksum,eepbuffer[190], eepbuffer[191]);
-                client.publish("pmbus/eeprom/checksum", msg);      
-            }      
+        m24c32Checksum();
         key = 0;
         delay(1000);
       }
     } 
     count++;  
-  }
-}
-
-void setupWifi(){
-  delay(10);
-  wiset = true;
-  wifistatus = true;
-  Serial.println();
-  Serial.print("Connecting to ");
-  Serial.println(ssid);
-  WiFi.mode(WIFI_STA);
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-    k++;
-    Serial.print(".");
-    if( k >= 30){
-    wiset = false;
-    wifistatus = false;
-    Serial.printf("\n Wi-Fi Not Connect.. \n");
-    break;
-    }
-  }
-  if(wiset){
-  randomSeed(micros());
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  }
-  else{
-    Serial.println("");
-    Serial.println("WiFi connect Failed");
   }
 }
 
@@ -234,35 +164,35 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
-  String topicStr(topic);
-  if (topicStr.compareTo("pmbus/set") == 0)
-  {
+//  String topicStr(topic);
+//  if (topicStr.compareTo("pmbus/set") == 0)
+//  {
     if ((char)payload[0] == '0'){
         key = 0;
         Serial.println(": key = 0 :");
     }
-    if ((char)payload[0] == '1'){
+    else if ((char)payload[0] == '1'){
         key = 1;
         Serial.println(": key = 1 :");
     }
-    if ((char)payload[0] == '2'){
+    else if ((char)payload[0] == '2'){
         key = 2;
         Serial.println(": key = 2 :");
     }
-    if ((char)payload[0] == '3'){
+    else if ((char)payload[0] == '3'){
         key = 3;
         Serial.println(": key = 3 :");
     }
-    if ((char)payload[0] == '4'){
+    else if ((char)payload[0] == '4'){
         key = 4;
         Serial.println(": key = 4 :");
     }
-    if ((char)payload[0] == 'w'){
+    else if ((char)payload[0] == 'w'){
         pmbuswrite = true;
         Serial.println(": Write Enable :");
     }
    // delay(10);
-  }  
+//  }  
 }
 
 void reconnect() {

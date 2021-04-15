@@ -156,3 +156,87 @@ int8_t i2c_blockCommandReadBlock(uint8_t address, uint8_t clength, uint8_t *comm
   i2c_requestFrom(address, values, length);
   return ret;
 }
+
+
+uint8_t eepromreadbyte(int address, uint16_t offset)
+{
+  uint8_t data;
+  Wire.beginTransmission(address);
+  Wire.write((int)(offset >> 8));
+  Wire.write((int)(offset & 0xFF));
+  Wire.endTransmission(I2C_NOSTOP);
+  Wire.requestFrom(address, 1);
+  data = Wire.read();
+  return data;
+}
+
+void eepromreadbytes(int address, uint16_t offset, int count, uint8_t * dest)
+{
+  Wire.beginTransmission(address);
+  Wire.write((int)(offset >> 8));
+  Wire.write((int)(offset & 0xFF));
+  Wire.endTransmission(I2C_NOSTOP);
+  uint8_t i = 0;
+  Wire.requestFrom(address, count);
+  while (Wire.available()) {
+    dest[i++] = Wire.read();
+  }
+}
+
+
+
+uint8_t read_data()
+{
+  uint8_t index = 0; //index to hold current location in ui_buffer
+  int c; // single character used to store incoming keystrokes
+  while (index < UI_BUFFER_SIZE-1)
+  {
+    c = Serial.read(); //read one character
+    if (((char) c == '\r') || ((char) c == '\n')) break; // if carriage return or linefeed, stop and return data
+    if ( ((char) c == '\x7F') || ((char) c == '\x08') )   // remove previous character (decrement index) if Backspace/Delete key pressed      index--;
+    {
+      if (index > 0) index--;
+    }
+    else if (c >= 0)
+    {
+      ui_buffer[index++]=(char) c; // put character into ui_buffer
+    }
+  }
+  ui_buffer[index]='\0';  // terminate string with NULL
+
+  if ((char) c == '\r')    // if the last character was a carriage return, also clear linefeed if it is next character
+  {
+    delay(10);  // allow 10ms for linefeed to appear on serial pins
+    if (Serial.peek() == '\n') Serial.read(); // if linefeed appears, read it and throw it away
+  }
+
+  return index; // return number of characters, not including null terminator
+}
+
+int32_t read_int()
+{
+  int32_t data;
+  read_data();
+  if (ui_buffer[0] == 'm')
+    return('m');
+  if ((ui_buffer[0] == 'B') || (ui_buffer[0] == 'b'))
+  {
+    data = strtol(ui_buffer+1, NULL, 2);
+  }
+  else
+    data = strtol(ui_buffer, NULL, 0);
+  return(data);
+}
+
+int8_t read_char()
+{
+  read_data();
+  return(ui_buffer[0]);
+}
+
+// Read a string from the serial interface.  Returns a pointer to the ui_buffer.
+char *read_string()
+{
+  read_data();
+  return(ui_buffer);
+}

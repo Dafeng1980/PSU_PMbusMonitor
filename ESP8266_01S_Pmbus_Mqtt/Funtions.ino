@@ -1,58 +1,36 @@
 
-uint8_t read_data()
-{
-  uint8_t index = 0; //index to hold current location in ui_buffer
-  int c; // single character used to store incoming keystrokes
-  while (index < UI_BUFFER_SIZE-1)
-  {
-    c = Serial.read(); //read one character
-    if (((char) c == '\r') || ((char) c == '\n')) break; // if carriage return or linefeed, stop and return data
-    if ( ((char) c == '\x7F') || ((char) c == '\x08') )   // remove previous character (decrement index) if Backspace/Delete key pressed      index--;
-    {
-      if (index > 0) index--;
+void setupWifi(){
+  delay(10);
+  wiset = true;
+  wifistatus = true;
+  Serial.println();
+  Serial.print("Connecting to ");
+  Serial.println(ssid);
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    k++;
+    Serial.print(".");
+    if( k >= 30){
+    wiset = false;
+    wifistatus = false;
+    Serial.printf("\n Wi-Fi Not Connect.. \n");
+    break;
     }
-    else if (c >= 0)
-    {
-      ui_buffer[index++]=(char) c; // put character into ui_buffer
-    }
   }
-  ui_buffer[index]='\0';  // terminate string with NULL
-
-  if ((char) c == '\r')    // if the last character was a carriage return, also clear linefeed if it is next character
-  {
-    delay(10);  // allow 10ms for linefeed to appear on serial pins
-    if (Serial.peek() == '\n') Serial.read(); // if linefeed appears, read it and throw it away
+  if(wiset){
+  randomSeed(micros());
+  Serial.println("");
+  Serial.println("WiFi connected");
+  Serial.println("IP address: ");
+  Serial.println(WiFi.localIP());
   }
-
-  return index; // return number of characters, not including null terminator
-}
-
-int32_t read_int()
-{
-  int32_t data;
-  read_data();
-  if (ui_buffer[0] == 'm')
-    return('m');
-  if ((ui_buffer[0] == 'B') || (ui_buffer[0] == 'b'))
-  {
-    data = strtol(ui_buffer+1, NULL, 2);
+  else{
+    Serial.println("");
+    Serial.println("WiFi connect Failed");
   }
-  else
-    data = strtol(ui_buffer, NULL, 0);
-  return(data);
-}
-
-// Read a string from the serial interface.  Returns a pointer to the ui_buffer.
-char *read_string()
-{
-  read_data();
-  return(ui_buffer);
-}
-
-int8_t read_char()
-{
-  read_data();
-  return(ui_buffer[0]);
 }
 
 void i2cdetects(uint8_t first, uint8_t last) {
@@ -465,6 +443,22 @@ void pmbusStatus()
     }
 }
 
+void getversion(){
+  if(smbus_waitForAck(ps_i2c_address, 0x00))
+  {
+     readFw_version(ps_i2c_address, ver);
+     readBootloader_version(ps_i2c_address, ver+3);
+     Serial.printf("\n  Firmware_REV: %02x%02x%02x \n", ver[0],ver[1],ver[2]);
+     Serial.printf("Bootloader_REV: %02x%02x%02x \n", ver[3],ver[4],ver[5]);
+     if(wifistatus){ 
+     snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
+     client.publish("pmbus/fru/HWversion", msg);
+     snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
+     client.publish("pmbus/fru/BLversion", msg);
+    }
+  } 
+}
+
 bool readpmbusdata()
 {   
     bool ret = true;
@@ -510,31 +504,20 @@ bool readpmbusdata()
      return ret;  
 }
 
-uint8_t m24c32readbyte(int address, uint16_t offset)
-{
-  uint8_t data;
-  Wire.beginTransmission(address);
-  Wire.write((int)(offset >> 8));
-  Wire.write((int)(offset & 0xFF));
-  Wire.endTransmission(I2C_NOSTOP);
-  Wire.requestFrom(address, 1);
-  data = Wire.read();
-  return data;
+void m24c32Checksum(){
+    uint16_t checksum;
+    eepromreadbytes(m24c32_address, 0, 256, eepbuffer);       
+    checksum = calcCheckSum(eepbuffer, 192);
+    Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
+    Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
+      if(wifistatus){
+        snprintf (msg, MSG_BUFFER_SIZE, "Ca: 0x%04x Re: 0x%02x%02x", checksum, eepbuffer[190], eepbuffer[191]);
+        client.publish("pmbus/eeprom/checksum", msg);      
+       } 
+    printFru(0, 0xFF , eepbuffer);   
 }
 
-void m24c32readbytes(int address, uint16_t offset, int count, uint8_t * dest)
-{
-  Wire.beginTransmission(address);
-  Wire.write((int)(offset >> 8));
-  Wire.write((int)(offset & 0xFF));
-  Wire.endTransmission(I2C_NOSTOP);
-  uint8_t i = 0;
-  Wire.requestFrom(address, count);
-  while (Wire.available()) {
-    dest[i++] = Wire.read();
-  }
-}
- uint16_t eepCheckSum (uint8_t *pBuffer, uint16_t len)
+uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len)
  {
      uint16_t sum;
      int i;  
@@ -545,3 +528,33 @@ void m24c32readbytes(int address, uint16_t offset, int count, uint8_t * dest)
      sum = 0x00FF & (~sum + 1);  
      return (sum);
  }
+
+void testBlueLedOn(){
+      pmbus_blueLed(ps_i2c_address, 0x01);
+      Serial.println(": Blue LED On :");
+ }
+
+void testBlueLedOff(){
+      pmbus_blueLed(ps_i2c_address, 0x00);
+      Serial.println(": Blue LED OFF :");
+ }
+
+void readCalibration(){
+  read_calibrationOutputvolt();
+            delay(100);
+            read_calibrationCount();
+            delay(100);
+            if(wifistatus){
+                client.publish("pmbus/set", "0");      
+            }  
+}
+
+void deviceAddrset(){
+  //  scani2c = false;
+  i2cdetects(0x03, 0x7F); 
+  while(scani2c){
+    pmbusdetects();
+    delay(50);
+    if(n > 0) break;
+    } 
+}
