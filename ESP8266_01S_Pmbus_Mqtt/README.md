@@ -6,8 +6,8 @@
 
 * Add the [ESP8266 Arduino core & Libraries](https://github.com/esp8266/Arduino "https://github.com/esp8266/Arduino") <br/>
 
-* Install two apps on the phone:   [Serial USB Terminal APP](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en "https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en") (is a line-oriented terminal / console app for microcontrollers, arduinos and other devices with a serial / UART interface connected with a USB to serial converter to your android device.) &
-[MQTT Dash APP](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en "https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en") IoT: Use the ESP8266 with the MQTT protocol to send PMbus data to the cloud. <br/>
+* Install two apps on the phone:  <br/> [Serial USB Terminal APP](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en "https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en") (is a line-oriented terminal / console app for microcontrollers, arduinos and other devices with a serial / UART interface connected with a USB to serial converter to your android device). <br/>
+[MQTT Dash APP](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en "https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en") IoT(Use the ESP8266 with the MQTT protocol to send PMbus data to the cloud). <br/>
 
 * The Pmbus.ino / Smbus.ino / Twii2c.ino inspired by [Linduino libraries](https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html "https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html") <br/>
 
