@@ -1,4 +1,4 @@
-# PSU Tools&Debuger For Monitoring PMbus Data.  
+# PSU Tools For Monitoring PMbus Data.  
 
  * Base on the [Mega128L Nano Board & ESP8266 Board](https://github.com/Dafeng1980/AtmegaBoards).
  * Arduino HW&SW Compatible.  <br/> 
