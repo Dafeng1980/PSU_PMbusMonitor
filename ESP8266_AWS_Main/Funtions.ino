@@ -581,6 +581,7 @@ bool readpmbusdata()
      pd.atsStatusWord = pmbus_readStatusWord(ats_i2c_address);
      pd.chgStatusWord = psu_readStatusChg(ps_i2c_address);
      pd.dchStatusWord = psu_readStatusDch(ps_i2c_address);
+     delay(2);
      pd.inputVs1 = ats_readVin_S1(ats_i2c_address);
      pd.inputVs2 = ats_readVin_S2(ats_i2c_address);
      pd.atsStatusWord = pmbus_readStatusWord(ats_i2c_address);
@@ -596,7 +597,8 @@ bool readpmbusdata()
 
 void m24c32Checksum(){
     uint16_t checksum;
-    eepromreadbytes(m24c32_address, 0, 256, eepbuffer);       
+    eepromreadbytes(m24c32_address, 0, 128, eepbuffer);
+    eepromreadbytes(m24c32_address, 128, 128, eepbuffer+128);       
     checksum = calcCheckSum(eepbuffer, 192);
     Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
     Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);

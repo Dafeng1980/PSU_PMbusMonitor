@@ -170,7 +170,7 @@ uint8_t eepromreadbyte(int address, uint16_t offset)
   return data;
 }
 
-void eepromreadbytes(int address, uint16_t offset, int count, uint8_t * dest)
+void eepromreadbytes(int address, uint16_t offset, int count, uint8_t * dest)   //buffer is 128Byte Max
 {
   Wire.beginTransmission(address);
   Wire.write((int)(offset >> 8));
