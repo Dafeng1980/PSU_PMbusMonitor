@@ -1,7 +1,7 @@
 # PSU Tools For Monitoring PMbus Data.  
 
  * Base on the [Mega128L Nano Board & ESP8266 Board](https://github.com/Dafeng1980/AtmegaBoards).
- * Arduino HW&SW Compatible.  <br/> 
+ * [Arduino](https://www.arduino.cc/en/software) HW&SW Compatible.  <br/> 
 
  ### Mega Nano Board With Serial: <br/>
  
