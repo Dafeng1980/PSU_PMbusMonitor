@@ -12,7 +12,7 @@
 
 * The Pmbus.ino / Smbus.ino / Twii2c.ino inspired by [Linduino libraries](https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html "https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html") <br/>
 
-* Modify "Wire.h", Wire.cpp", added the [Wire.requestFromS](https://github.com/Dafeng1980/PSU_PMbusMonitor/tree/master/doc/Wire) to Support SMbus Wire.requestFrom. in folder (%USERPROFILE%\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\3.0.1\libraries\Wire) <br/>
+* Modify "Wire.h", Wire.cpp", added the [Wire.requestFromS](https://github.com/Dafeng1980/PSU_PMbusMonitor/tree/master/doc/Wire) to Support SMbus Wire.requestFrom. in folder  (%USERPROFILE%\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\3.0.1\libraries\Wire). <br/>
  ### ESP-01S:  <br/>
  
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-01s.jpg)   <br/> <br/>
