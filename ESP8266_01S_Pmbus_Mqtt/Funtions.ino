@@ -506,7 +506,8 @@ bool readpmbusdata()
 
 void m24c32Checksum(){
     uint16_t checksum;
-    eepromreadbytes(m24c32_address, 0, 256, eepbuffer);       
+    eepromreadbytes(m24c32_address, 0, 128, eepbuffer);
+    eepromreadbytes(m24c32_address, 128, 128, eepbuffer+128);       
     checksum = calcCheckSum(eepbuffer, 192);
     Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
     Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
@@ -540,7 +541,7 @@ void testBlueLedOff(){
  }
 
 void readCalibration(){
-  read_calibrationOutputvolt();
+            read_calibrationOutputvolt();
             delay(100);
             read_calibrationCount();
             delay(100);
