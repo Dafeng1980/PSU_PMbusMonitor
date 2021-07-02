@@ -1,36 +1,128 @@
 
-void setupWifi(){
+void setWifiMatt(){
   delay(10);
-  wiset = true;
   wifistatus = true;
+  mqttflag = false;
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     k++;
     Serial.print(".");
-    if( k >= 3){
-    wiset = false;
+    if( k >= 30){
     wifistatus = false;
-    Serial.printf("\n Wi-Fi Not Connect.. \n");
     break;
     }
   }
-  if(wiset){
-  randomSeed(micros());
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  }
+  if(wifistatus){
+      randomSeed(micros());
+      Serial.println("");
+      Serial.println("WiFi connected");
+      Serial.println("IP address: ");
+      Serial.println(WiFi.localIP());
+      client.setCallback(callback);
+      if(client.connect(clientID, mqtt_user, mqtt_password)) mqttflag = true;
+      Serial.println("MQTT Broker Connected. \n "); 
+    } 
   else{
     Serial.println("");
     Serial.println("WiFi connect Failed");
+    }
+  k = 0; 
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  //client.connect(clientID, mqtt_user, mqtt_password);
+  // mqttflag = false;
+  while (!client.connected()) {
+     Serial.print("Attempting MQTT connection..."); // Attempt to connect   
+     String clientId = "ESP8266Client-";
+     clientId += String(random(0xffff), HEX);
+    if (client.connect((clientId.c_str()), mqtt_user, mqtt_password)) {
+      Serial.println("connected to broker");
+      client.publish("outTopic", "hello world reconnected");  // Once connected, publish an announcement...
+      mqttflag = true;   
+    }
+    else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 1 seconds");
+        k++;
+        delay(1000);
+        if( k >= 5){
+            mqttflag = false;
+            if( k >= 15){
+                wifistatus = false;
+                k = 0;
+              }
+            break;
+         }            
+        // Wait 1 seconds before retrying
+    }
   }
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+    if ((char)payload[0] == '0')      key = 0;
+    else if ((char)payload[0] == '1') key = 1;
+    else if ((char)payload[0] == '2') key = 2;
+    else if ((char)payload[0] == '3') key = 3;
+    else if ((char)payload[0] == '4') key = 4;
+    else key = 0;
+    Serial.printf("\n Key= %#01d:\n", key); 
+}
+
+void mqttLoop(){
+  if (!client.connected()) {
+            reconnect();            
+    }
+    if (mqttflag){    
+      client.loop();
+      client.subscribe("pmbus/set");
+    }
+}
+
+void buttoncheck(){
+  if (digitalRead(kButtonPin) == 0 && buttonflag){
+      delay(10);
+        if(digitalRead(kButtonPin) == 0){
+              key++;
+              if (key >= 5) key = 0;
+              Serial.printf("\n Key= %#01d:\n", key);
+              buttonflag = false;
+       }
+    }
+}
+
+void serialread(){
+  char readval;
+  if (Serial.available())                //! Serial input read
+  {
+      readval = read_char();                     //! Reads the user command
+    if ((char)readval == '0')      key = 0;
+    else if ((char)readval == '1') key = 1;
+    else if ((char)readval == '2') key = 2;
+    else if ((char)readval == '3') key = 3;
+    else if ((char)readval == '4') key = 4;
+    else if ((char)readval == 'h'  || (char)readval == 'H') printhelp();
+    else {
+      Serial.println("unknown command");
+      Serial.println("type \'h\' for help");
+      key = 0;       
+    }
+    Serial.printf("\n Key= %#01d:\n", key);
+ }
 }
 
 void i2cdetects(uint8_t first, uint8_t last) {
@@ -103,7 +195,7 @@ void printpmbusData(struct PowerPmbus busData)
     
           Serial.print(F("Temperature   8D: "));
           Serial.print(busData.temp1, 0);
-          Serial.print(F("C"));
+          Serial.println(F("C"));
           
     Serial.print(F("STATUS WORD 0x"));
     Serial.println(busData.statusWord, HEX);    
@@ -122,15 +214,13 @@ void printpmbusData(struct PowerPmbus busData)
 
 void publishPmbusData(struct PowerPmbus busData){
      
- if (count%10 == 0) {
+ if (count%6 == 0) {
       ++value;     
       snprintf (msg, MSG_BUFFER_SIZE, "PMBUS_Addr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
       client.publish("pmbus/status", msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
-      snprintf (msg, MSG_BUFFER_SIZE, "Pri_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
-      client.publish("pmbus/fru/PRversion", msg);
-      snprintf (msg, MSG_BUFFER_SIZE, "Sec_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
-      client.publish("pmbus/fru/SEversion", msg);
+      snprintf (msg, MSG_BUFFER_SIZE, "MFR_REV: %01x%01x%01x%01x%01x%01x",ver[0],ver[1],ver[2],ver[3],ver[4],ver[5]);
+      client.publish("pmbus/fru/version", msg);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
   client.publish("pmbus/input/Volt", msg);
@@ -159,9 +249,11 @@ void publishPmbusData(struct PowerPmbus busData){
 
 void printBits(byte myByte){
  for(byte mask = 0x80; mask; mask >>= 1){
-   if(mask  & myByte) Serial.print('1');
-   else Serial.print('0');
-  }
+   if(mask  & myByte)
+       Serial.print('1');
+   else
+       Serial.print('0');
+ }
 }
 
 void printchar(uint8_t *values, uint8_t bsize){
@@ -355,7 +447,7 @@ void pmbusStatus()
       Serial.println(F("STATUS_CML_MEM_Logic_Fault !! "));
     }
     Serial.println(F(" "));
-    if(wifistatus){
+    if(wifistatus & mqttflag){
        tm = pmbus_readStatusTemp(ps_i2c_address);
        fa = pmbus_readStatusFan(ps_i2c_address);
        cm = pmbus_readStatusCml(ps_i2c_address);
@@ -372,9 +464,9 @@ void pmbusStatus()
 bool readpmbusdata()
 {   
     bool ret = true;
-  if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {
-      Serial.println("PMBUS Polling Fail \n");
-      if(wifistatus){
+  if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {  //0x00 PAGE read
+      Serial.println("PMBUS Polling Fail \n");      
+      if(wifistatus & mqttflag){
         if(count%6 == 0){
             ++value;     
             snprintf (msg, MSG_BUFFER_SIZE, "PMBUS Polling Fail  Loop#%ld", value);
@@ -382,15 +474,51 @@ bool readpmbusdata()
         }
       }
       return ret = false;
-    } 
-     pd.inputV  = pmbus_readVin(ps_i2c_address);     
-     pd.inputA  = pmbus_readIin(ps_i2c_address);
-     pd.inputP  = pmbus_readPin(ps_i2c_address);      
+    }
+     pd.statusWord = pmbus_readStatusWord(ps_i2c_address); 
+     pd.inputV = pmbus_readVin(ps_i2c_address);     
+     pd.inputA = pmbus_readIin(ps_i2c_address);
+     pd.inputP = pmbus_readPin(ps_i2c_address);      
      pd.outputV = pmbus_readVout(ps_i2c_address);
      pd.outputA = pmbus_readIout(ps_i2c_address);    
      pd.outputP = pmbus_readPout(ps_i2c_address);
-     pd.temp1   = pmbus_readOtemp(ps_i2c_address);           //temp sensor 0x8D  
-     pd.statusWord = pmbus_readStatusWord(ps_i2c_address);
+     pd.temp1 = pmbus_readOtemp(ps_i2c_address);           //temp sensor 0x8D  
      pd.i2cAddr = ps_i2c_address;
      return ret;  
 }
+
+void printhelp(){
+      Serial.print(F(" Which are commands can be used.\r\n "));
+      Serial.print(F(" 1 > Set Voutput to 46V \r\n "));
+      Serial.print(F(" 2 > Set Voutput to 54V \r\n "));
+      Serial.print(F(" 3 > Set Voutput to 50V \r\n "));
+      Serial.print(F(" 4 > Read MFR Revisions \r\n "));
+      Serial.print(F(" 0 > Set Default \r\n "));
+      delay(2000);  
+}
+
+void m24c32Checksum(){
+    uint16_t checksum;
+    eepromreadbytes(m24c32_address, 0, 128, eepbuffer);
+    eepromreadbytes(m24c32_address, 128, 128, eepbuffer+128);       
+    checksum = calcCheckSum(eepbuffer, 192);
+    Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
+    Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
+      if(wifistatus){
+        snprintf (msg, MSG_BUFFER_SIZE, "Ca: 0x%04x Re: 0x%02x%02x", checksum, eepbuffer[190], eepbuffer[191]);
+        client.publish("pmbus/eeprom/checksum", msg);      
+       } 
+    printFru(0, 0xFF , eepbuffer);   
+}
+
+uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len)
+ {
+     uint16_t sum;
+     int i;  
+     sum = 0;
+     for (i = 0; i < len; i++) {
+         sum += pBuffer[i];
+     }  
+     sum = 0x00FF & (~sum + 1);  
+     return (sum);
+ }
