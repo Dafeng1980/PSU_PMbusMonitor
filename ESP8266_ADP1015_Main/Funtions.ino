@@ -485,7 +485,7 @@ bool readpmbusdata()
 }
 
 void printhelp(){
-      Serial.print(F(" Which are commands can be used.\r\n "));
+      Serial.print(F("Here are commands can be used For ADP1015.\r\n"));
       Serial.print(F(" 1 > Set Voutput to 46V \r\n "));
       Serial.print(F(" 2 > Set Voutput to 54V \r\n "));
       Serial.print(F(" 3 > Set Voutput to 50V \r\n "));

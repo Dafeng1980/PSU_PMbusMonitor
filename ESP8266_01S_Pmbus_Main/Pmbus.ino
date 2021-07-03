@@ -76,6 +76,11 @@ void pmbus_clearFaults(uint8_t address)
   smbus_sendByte(address, 0x03);  //CLEAR_FAULTS = 0x03;
 }
 
+void pmbus_writeProtect(uint8_t address, uint8_t val)  // val = 0x00 to disable Write-Protect, 0x80 enablle.
+{
+  smbus_writeByte(address, 0x10, val);  //WRITE_PROTECT 0x10;
+}
+
 float pmbus_readVout(uint8_t address)
 {
   int8_t vout_mode;
