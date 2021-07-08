@@ -1,16 +1,16 @@
 
 void print_memu()
         {                   
-           Serial.print(F("\n  Pmbus Program For CRPS "));
+           Serial.print(F("\n Pmbus Program For CRPS "));
            Serial.print(F(" To Read The Voltage Current Sensor Status \n"));
-           Serial.print(F("  Set the CRbus Mode, Detect PMbus Device etc.\n"));
+           Serial.print(F(" Set the CRbus Mode, Detect PMbus Device etc.\n"));
            Serial.println(F("\nEnter command:"));
            printhelp();
            delay(500);
         }
 
 void printhelp(){
-      Serial.print(F("Here are commands can be used For CRPS.\r\n"));
+      Serial.print(F("Here are commands can be used For XXX Model.\r\n"));
       Serial.print(F(" 1 > Moitor All Status and Show \r\n "));
       Serial.print(F(" 2 > Set Fan Full Speed  \r\n "));
       Serial.print(F(" 3 > Set CRbus Mode \r\n "));
@@ -27,29 +27,22 @@ void printhelp(){
 
 
 void mfr_menu_commands(){
-        uint8_t user_command;
-        
+        uint8_t user_command;       
   do{  
     Serial.print(F("  1-Read MFR Info \n"));
-    Serial.print(F("  2-Read MFR CSU2000ADC FW REVISION\n"));
+    Serial.print(F("  2-Read MFR FW REVISION\n"));
     Serial.print(F("  3-Read MFR_BLACKBOX\n"));
     Serial.print(F("  4-Clear the 05&06 Cal \n"));
-//    Serial.print(F("  5-Margin High\n"));
-//    Serial.print(F("  6-Margin Low\n"));
+    Serial.print(F("  5-Margin High\n"));
+    Serial.print(F("  6-Margin Low\n"));
     Serial.print(F("  7-Mass Erase the PFlash\n"));
     Serial.print(F("  8-Reads UCD3138 Pflash At 2k_32K_64K Checksum \n"));
     Serial.print(F("  9-Erase&Write UCD3138 Pflash At 2k Checksum \n"));
     Serial.print(F("  m-Main Menu\n"));
-    Serial.print(F("\nEnter a command: "));
-  
+    Serial.print(F("\nEnter a command: "));  
     user_command = read_int();                              //! Reads the user command
-    if (user_command == 'm')                                // Print m if it is entered
-    {
-      Serial.print(F("m\n"));
-    }
-    else
-      Serial.println(user_command);                         // Print user command
-
+    if (user_command == 'm')   Serial.print(F("m\n"));     // Print m if it is entered
+    else  Serial.println(user_command);                    // Print user command     
     switch (user_command)
     {
       case 1:
@@ -62,80 +55,57 @@ void mfr_menu_commands(){
       Serial.println(F(" "));
         break;
       case 2:
-//      getCsu2000AdcFwRev();
+      Serial.println(F("TBD "));
         break;
       case 3:
-//      setFanFullSpeed();
+      Serial.println(F("TBD "));
         break;
       case 4:
-//       Serial.println(F(" "));
-//       Serial.println(F("Clear the 05&06 Cal "));
-//       Serial.print(F("Press button to continue"));
-//       while(digitalRead(kButtonPin) != 0);
-//       factoryMode();
-//       reset05_06Cal();
-//       Serial.println(F("Reset OK "));
-//       exitFactoryMode(); 
-        Serial.println(F("No Test "));      
+      Serial.println(F("TBD "));     
         break;
       case 5:
-
-      break;
-      
+      Serial.println(F("TBD "));
+      break;      
       case 6:
-         Serial.println(F(" "));
-         Serial.println(F("No Test "));
-        break;
-        
+      Serial.println(F("No Test "));
+        break;        
       case 7:
-//        Serial.println(F(" "));
-//        Serial.println(F("Mass Erase the PFlash 0x048000 to 0x04FFFF For 32K"));
-//        Serial.print(F("Press button to continue"));
-//        while(digitalRead(kButtonPin) != 0);
-//        Serial.println(F(" "));
-//         ucd3138MassEraseFlash(); 
-        //  for( int i = 3; i<31; i++)
-        //  {
-        //   ucd3138PageEraseFlashCus(i);
-        //  }
-        // // ucd3138PageEraseFlashCus(7);
-//         buzzing();     
-        break;
-        
+        Serial.println(F(" "));
+        Serial.println(F("Mass Erase all the PFlash 0x040000 to 0x04FFFF For 64K"));
+        Serial.print(F("Press button to continue"));
+        while(digitalRead(kButtonPin) != 0);
+        Serial.println(F(" "));
+         ucd3138MassEraseFlash(0x01);     //Pflash Block0 32k
+         delay(30);
+         ucd3138MassEraseFlash(0x02);     //Pflash Block1 32k
+         delay(30); 
+         buzzing();     
+        break;        
       case 8:
-//        ucd3138ConfReaAddr(RAEDADDR);
-//        Serial.println(F(" "));
-//        Serial.print(F("Configure Read Address at : 0x"));
-//        Serial.println(RAEDADDR, HEX);
-//        Serial.println(F(" "));
-//        delay(10);
-//        ucd3138Reads();
-//         Serial.println(F(" "));
-//         Serial.println(F("Display the PFlash checksum_2k_32k_64k"));
-//         Serial.println(F(" "));
-//          ucd3138FlashDisplay(0x07A0);
-//          Serial.println(F(" "));
-//          buzzing();
-//          ucd3138FlashDisplay(0x7FA0);
-//          Serial.println(F(" "));
-//          buzzing();
-//          ucd3138FlashDisplay(0xFF00);
-//          Serial.println(F(" "));
-//          buzzing();
-        break;
-        
+         Serial.println(F(" "));
+         Serial.println(F("Display the PFlash checksum_2k_32k_64k"));
+         Serial.println(F(" "));
+          ucd3138FlashDisplay(0x0700);
+          Serial.println(F(" "));
+          buzzing();
+          ucd3138FlashDisplay(0x7F00);
+          Serial.println(F(" "));
+          buzzing();
+          ucd3138FlashDisplay(0xFF00);
+          Serial.println(F(" "));
+          buzzing();
+        break;        
       case 9:
-//         Serial.println(F(" "));
-//         Serial.println(F("Erase&Write the PFlash 0x040400 For 1K"));
-//         Serial.print(F("Press button to continue"));
-//          while(digitalRead(kButtonPin) != 0);
-//          Serial.println(F(" "));
-////          ucd3138PageEraseFlash();
-////          delay(100);
-////          ucd3138Write1k();
-////          buzzing();
-        break;
-        
+         Serial.println(F(" "));
+         Serial.println(F("Erase&Write the PFlash Block0 Page 1(0x040400) For 2K checksum "));
+         Serial.print(F("Press button to continue"));
+          while(digitalRead(kButtonPin) != 0);
+          Serial.println(F(" "));
+          ucd3138Blocl0PageErase(0x01);  //Erase Pflash Block0 Page 1;
+          delay(25);
+          ucd3138Write2kChecksum();
+          buzzing();
+        break;        
       default:
         if (user_command != 'm')
           Serial.println(F("Invalid Selection"));
@@ -148,6 +118,7 @@ void mfr_menu_commands(){
 
 void printpmbusData(struct PowerPmbus busData)
 {
+    ledflash();
     Serial.println(F("========== PMBUS DATA =========="));
     Serial.println(" ");
     Serial.print(F("PMBUS ADDRESS: 0x"));    //F function enable to decrease sram usage
@@ -358,40 +329,6 @@ void pmbusStatus()
     Serial.println(F(" "));
 }
 
-
-
-void printpowerSensors()
-  {
-      //float temp;
-      Serial.println(F("========= READ ALL SENSOR =========="));
-      Serial.println(F(" "));
-             //temp sensor 0x8D  Inlet Air
-      Serial.print(F("Inlet Air Temp: "));
-      Serial.print(pd.temp1, 0);
-      Serial.println(F(" C"));
-             //0x8E Hotspot1 Sensor located on secondary side of DC/DC stage
-      Serial.print(F("DC-DC stage Temp: "));
-      Serial.print(pd.temp2, 0);
-      Serial.println(F(" C"));
-              // 0x8F Hotspot2 Sensor located on primary heat sink
-      Serial.print(F("P-heatsink Temp: "));
-      Serial.print(pd.temp3, 0);
-      Serial.println(F(" C"));
-//                        temp = pmbus_readtemp1(ps_i2c_address);
-//                        Serial.print(F("MFR-D3 Temp: "));
-//                        Serial.print(temp, 0);
-//                        Serial.print(F(" C"));
-//                        temp = pmbus_readtemp2(ps_i2c_address);
-//                        Serial.print(F("    MFR-D4 Temp: "));
-//                        Serial.print(temp, 0);
-//                        Serial.println(F(" C"));
-//                        
-      Serial.print(F("Fan1 Speed:  "));
-      Serial.print(pd.fanSpeed, 0);
-      Serial.println(F(" rpm"));
-      Serial.println(F(" "));
-    }
-
 void buzzing(){
          tone(kBuzzerPin, 2200);
           delay(50);
@@ -407,30 +344,6 @@ void alarm(){
         }
 }
 
-float readeout(){
-  uint8_t data[6];
- // unsigned int m,b,r;
-  unsigned long maxValue,lastEnergyCount,lastSampleCount,currentEnergyCount,currentSampleCount;
-  float eoutResult;
-//  smbus -> readBlock(ps_i2c_address, 0x30, data, 5);
-//      m = data[1] * 256 + data[0];
-//      b = data[3] * 256 + data[2];
-//      r = data[4];
-//      maxValue = (m * 32767 + b)* pow(10,r);
-    maxValue = 32767;
-    smbus_readBlock(ps_i2c_address, 0x87, data, 6);               //EOUT 0x87
-    lastEnergyCount = data[0] + data[1]*0x100 + data[2]*maxValue;
-    lastSampleCount = data[3] + data[4]*0x100 + data[5]*0x10000;
-      delay(1000);
-    smbus_readBlock(ps_i2c_address, 0x87, data, 6);
-    currentEnergyCount = data[0] + data[1]*0x100 + data[2]*maxValue;
-    currentSampleCount = data[3] + data[4]*0x100 + data[5]*0x10000;
-        Serial.print(F("SampleCount "));
-        Serial.println(currentSampleCount - lastSampleCount);
-    eoutResult = (float)(currentEnergyCount - lastEnergyCount)/(float)(currentSampleCount - lastSampleCount);
-    return eoutResult; 
-}
-
 void printBits(byte myByte){
  for(byte mask = 0x80; mask; mask >>= 1){
    if(mask  & myByte)
@@ -442,22 +355,21 @@ void printBits(byte myByte){
 
 void i2cdetects(uint8_t first, uint8_t last) {
   uint8_t i, address, error;
-  char buff[10];
+  //char buff[10];
   // table header
   Serial.print("   ");
   for (i = 0; i < 16; i++) {
-    //Serial.printf("%3x", i);
-    sprintf(buff, "%3x", i);
-    Serial.print(buff);
+    Serial.printf("%3x", i);
+//    sprintf(buff, "%3x", i);
+//    Serial.print(buff);
   }
-
   // table body
   // addresses 0x00 through 0x77
   for (address = 0; address <= 127; address++) {
     if (address % 16 == 0) {
-      //Serial.printf("\n%#02x:", address & 0xF0);
-      sprintf(buff, "\n%02x:", address & 0xF0);
-      Serial.print(buff);
+      Serial.printf("\n0x%02x:", address & 0xF0);
+//      sprintf(buff, "\n%02x:", address & 0xF0);
+//      Serial.print(buff);
     }
     if (address >= first && address <= last) {
       Wire.beginTransmission(address);
@@ -465,19 +377,15 @@ void i2cdetects(uint8_t first, uint8_t last) {
       delay(5);
       if (error == 0) {
         // device found
-        //Serial.printf(" %02x", address);
-        sprintf(buff, " %02x", address);
-        Serial.print(buff);
-      } else if (error == 4) {
-        // other error
+        Serial.printf(" %02x", address);
+//        sprintf(buff, " %02x", address);
+//        Serial.print(buff);
+      } else if (error == 4) {    // other error      
         Serial.print(" XX");
-      } else {
-        // error = 2: received NACK on transmit of address
-        // error = 3: received NACK on transmit of data
-        Serial.print(" --");
+      } else {                   // error = 2: received NACK on transmit of address              
+        Serial.print(" --");    // error = 3: received NACK on transmit of data
       }
-    } else {
-      // address not scanned
+    } else {                 // address not scanned      
       Serial.print("   ");
     }
   }
@@ -489,37 +397,19 @@ void printFru(uint8_t first, uint8_t last, uint8_t *values) {
         Serial.print("    ");
         for (i = 0; i < 16; i++) {
                 Serial.printf("%3x", i);
-//                sprintf(buff, "%3x", i);
-//                Serial.print(buff);
             }
         for (address = 0; address <= 255; address++) {   
           if (address % 16 == 0) {
 //              Serial.printf("\n%#02x:", address & 0xF0);
                 Serial.printf("\n%02xh:", address & 0xF0);
-//              sprintf(buff, "\n%02x:", address & 0xF0);
-//              Serial.print(buff);
               }
               
             if (address >= first && address <= last)
                 Serial.printf(" %02x", values[address]);
-//                sprintf(buff, " %02x", address);
-//                Serial.print(buff);
            else Serial.print("   ");
             }
       Serial.println("\n");
 }
-
-void iOutFan()
-        {
-            Serial.print(F("Fan1 Speed:  "));
-            Serial.print(pd.fanSpeed, 0);
-            Serial.println(F(" rpm"));
-            Serial.println(F(" ")); 
-            Serial.print(F("IOUT: "));
-            Serial.print(pd.outputA, 2);
-            Serial.println(F("A")); 
-            Serial.println(F(" "));        
-        }
 
 void printchar(uint8_t *values, uint8_t bsize){
   for(int i = 0; i < bsize; i++){
@@ -527,7 +417,6 @@ void printchar(uint8_t *values, uint8_t bsize){
   }
    Serial.println();
 }
-
 
 void serialread(){
   char readval;
@@ -553,7 +442,6 @@ void serialread(){
     Serial.printf("\n Key= %#01d:\n", key);
  }
 }
-
 
 void pmbusdetects(){
   uint8_t i, address, error;
@@ -615,7 +503,6 @@ bool readpmbusdata()
      delay(20);     
 }
 
-
 void checkButton(){
     if(digitalRead(kButtonPin) == 0 && buttonflag){
           delay(10);
@@ -629,22 +516,10 @@ void checkButton(){
     }
 }
 
-
 void ledflash(){
   ledstatus = !ledstatus;
   if(ledstatus) digitalWrite(kLedPin, HIGH);
   else digitalWrite(kLedPin, LOW);
-}
-
-void ReadMfrRev(){
-      smbus_writeWord(ps_i2c_address, 0xD7, 0xFFFF);
-      smbus_writeWord(ps_i2c_address, 0xD7, 0xFFFF);
-      delay(20);
-      smbus_writeByte(ps_i2c_address, 0xD2, 0x06);
-      smbus_writeWord(ps_i2c_address, 0xD3, 0x0016);
-      smbus_readBlock(ps_i2c_address, 0xB4, ver, 6);
-      smbus_writeWord(ps_i2c_address, 0xD7, 0x0055);
-      Serial.printf("\nMRF_Rev:  %01x%01x%01x%01x%01x%01x \n",ver[0],ver[1],ver[2],ver[3],ver[4],ver[5]);
 }
 
 void pecstatus(){
@@ -659,3 +534,45 @@ void monitorstatus(){
   if(pecflag) Serial.print(F("Status Monitor Enable\n"));
   else Serial.print(F("Status Monitor Disable\n"));
   }
+
+ void pmbus_devices_detect(){
+   // scani2c = false;
+  i2cdetects(0x00, 0x7F);
+  if (digitalRead(kButtonPin) == 0){
+        delay(100);
+        if(digitalRead(kButtonPin) == 0){
+          buzzing();
+          scani2c = false;
+    }
+  }
+ while(scani2c){
+    digitalWrite(kLedPin, HIGH);
+    pmbusdetects();
+    delay(50);
+    digitalWrite(kLedPin, LOW);
+    delay(210);
+    if(n > 0) break;
+    }
+ }
+
+void m24c32Checksum(){
+    uint16_t checksum;
+    eepromreadbytes(m24c32_address, 0, 128, eepbuffer);
+    eepromreadbytes(m24c32_address, 128, 128, eepbuffer+128);       
+    checksum = calcCheckSum(eepbuffer, 192);
+    Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
+    Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
+    printFru(0, 0xFF , eepbuffer);   
+}
+
+uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len)
+ {
+     uint16_t sum;
+     int i;  
+     sum = 0;
+     for (i = 0; i < len; i++) {
+         sum += pBuffer[i];
+     }  
+     sum = 0x00FF & (~sum + 1);  
+     return (sum);
+ }

@@ -1,22 +1,23 @@
 /*!
-
- * Board ATmega128L;  External 7.3728Mhz@upload baud-rate:38400;
+ * The Smbus.ino Pmbus.ino inspired By below link
+ * https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html
+ *  #include <Wire.h>
+ * Need to modify "Wire.h", Wire.cpp", added the Wire.requestFromS to Support SMbus Wire.requestFrom.
+ * in folder "%USERPROFILE%\AppData\Local\Arduino15\packages\MegaCore\hardware\avr\2.1.3\libraries\Wire\src"
+ * 
+ * 
+ * Board ATmega128L;  External Clock@7.3728Mhz upload baud-rate:115200;
 */
 #include <Wire.h>
 
-#define PEC_ENABLE  0      //Smbus PEC(Packet Error Code) support. 1 = Enabled, 0 = Disabled.
-#define PS_ADDRESS 0x70
-#define PS_PARTNER_ADDRESS 0x5E
-#define MSG_BUFFER_SIZE  (50)
+#define TWI_BUFFER_SIZE 128
+#define PEC_ENABLE  1          //Smbus PEC(Packet Error Code) support. 1 = Enabled, 0 = Disabled.
 #define UI_BUFFER_SIZE 64
 #define I2C_NOSTOP 0
-#define RAEDADDR 0x07C0
-
 #define PS_I2C_ADDRESS 0x58         // PMbus Power Supply address 0x58/B0;
-//#define PS_I2C_ADDRESS 0x29         // PMbus Power Supply address 0x29/52;
-//#define PS_I2C_ADDRESS 0x77
-//#define PS_I2C_ADDRESS 0x5B 
-#define PS_PARTNER_ADDRESS 0x59
+//#define PS_I2C_ADDRESS 0x29       // PMbus Power Supply address 0x29/52;
+//#define PS_I2C_ADDRESS 0x70
+#define PS_PARTNER_ADDRESS 0x5B
 
 static struct PowerPmbus
 {
@@ -52,11 +53,8 @@ static bool pecflag = true;
 char ui_buffer[UI_BUFFER_SIZE];
 unsigned long previousMillis = 0;
 long count = 0;
-// uint16_t value = 0;
-// uint16_t k = 0;
 uint8_t n = 0 ;
-//uint8_t data1[10];           
-
+        
 const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
@@ -66,32 +64,17 @@ void setup()
 {
   pinMode(kButtonPin, INPUT_PULLUP);
   pinMode(kLedPin, OUTPUT);
-  Serial.begin(38400);              //! Initialize the serial port to the PC 38400
+  Serial.begin(38400);   //! Initialize the serial port to the PC 38400
+  Wire.begin();
+  //Wire.setClock(50000);    // Define the I2C clock, default is 100kHz;
   digitalWrite(kLedPin, LOW);  
   ps_i2c_address = PS_I2C_ADDRESS;
   ps_patner_address = PS_PARTNER_ADDRESS;
   pecflag = PEC_ENABLE;      
   print_memu();
-  scani2c = false;
-  if (digitalRead(kButtonPin) == 0){
-    delay(10);
-    if(digitalRead(kButtonPin) == 0){
-      buzzing();
-      scani2c = false;
-    }
-  }
-
- while(scani2c){
-    digitalWrite(kLedPin, HIGH);
-    pmbusdetects();
-    delay(50);
-    digitalWrite(kLedPin, LOW);
-    delay(210);
-    if(n > 0) break;
-    }
-    Serial.printf("\nPMBUSADDRESS %#02x:\n", ps_i2c_address);
+  pmbus_devices_detect();
+  Serial.printf("\nPMBUSADDRESS %#02x:\n", ps_i2c_address);
     key  = 0;
-    ps_i2c_address = 0x70;
   }
 
 void loop()
@@ -102,10 +85,7 @@ void loop()
         previousMillis = currentMillis;
         if(readpmbusdata()){
             if(0 != pd.statusWord && statusflag) pmbusStatus();      
-            if(0 == count%5) {
-              printpmbusData(pd);
-              ledflash();      
-            }
+            if(0 == count%5) printpmbusData(pd);
             if(key == 1){
                 monitorstatus();
                 key = 0;
@@ -119,8 +99,7 @@ void loop()
                 key = 0;
             }
             else if(key == 4){
-                ReadMfrRev();
-              //  mfr_menu_commands();
+               // ReadMfrRev();
                 key = 0;
                 delay(5000);
               }
