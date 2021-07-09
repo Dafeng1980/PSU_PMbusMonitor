@@ -115,10 +115,10 @@ void loop() {
     client.loop();
     client.subscribe("pmbus/set");
  } 
-  if (Serial.available())                //! Serial input read
-  {
-      readval = read_char();                     //! Reads the user command
-//      Serial.println((char)readval);
+  
+  if (Serial.available())  {              //! Serial input read
+      readval = read_char();              //! Reads the user command
+    //      Serial.println((char)readval);
     if ((char)readval == '0')      key = 0;
     else if ((char)readval == '1') key = 1;
     else if ((char)readval == '2') key = 2;
@@ -131,33 +131,33 @@ void loop() {
     else if ((char)readval == '9') key = 9;
     else if ((char)readval == 'O' || (char)readval == 'o')
     {
-           if(!psustatus){
+        if(!psustatus){
                   psOn();
                   digitalWrite(kLedPin, HIGH);
                   psustatus = true;
                   Serial.println("PSU ON. \n ");
                   delay(100);
                 }
-            else{
+        else{
                   Serial.println("PSU ON STATUS. \n ");
                 }   
     }
     else if ((char)readval == 'R' || (char)readval == 'r')
     {
-           if(psustatus){
+        if(psustatus){
                   psustatus = false;
                   digitalWrite(kLedPin, LOW);                  
                   Serial.println("PSU RESTAR ON. \n ");
                   delay(100);
                 }
-            else{
+        else{
                   Serial.println("PSU OFF STATUS. \n ");
                 }
             count = 0;       
     }
     else key = 0;
     Serial.printf("\n Key= %#01d:\n", key);
- }
+  }
   
   unsigned long now = millis(); 
   if (now - lastMsg >= 333) {
@@ -173,21 +173,21 @@ void loop() {
             if(count >= 1000) key = 0;           
       }
       else if(key == 2){
-          ATSvin_rawdata();
-          vsenor_rawdata();
-          if(count >= 2000) key = 0;
+            ATSvin_rawdata();
+            vsenor_rawdata();
+            if(count >= 2000) key = 0;
       }
       else if(key == 3){
-          pmbus_writeProtect(ats_i2c_address, 0x00);
-          pmbus_writeProtect(ps_i2c_address, 0x00);
-          delay(50);
-        for (uint8_t i = 0; i < 10; i++)
-        {
-          AtsBlackbox(i);
-          delay(50);
-          PsuBlackbox(i);
-          delay(50);
-        }
+            pmbus_writeProtect(ats_i2c_address, 0x00);
+            pmbus_writeProtect(ps_i2c_address, 0x00);
+            delay(50);
+            for (uint8_t i = 0; i < 10; i++)
+            {
+              AtsBlackbox(i);
+              delay(50);
+              PsuBlackbox(i);
+              delay(50);
+            }
           AtsBlackbox(0xff);
           delay(50);
           PsuBlackbox(0xff);
