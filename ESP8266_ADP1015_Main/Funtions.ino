@@ -90,7 +90,7 @@ void mqttLoop(){
     }
     if (mqttflag){    
       client.loop();
-      client.subscribe("pmbus/set");
+      client.subscribe("rrh/pmbus/set");
     }
 }
 
@@ -145,7 +145,7 @@ void i2cdetects(uint8_t first, uint8_t last) {
     if (address >= first && address <= last) {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
-      delay(2);
+      delay(5);
       if (error == 0) {  // device found       
         //Serial.printf(" %02x", address);
         sprintf(buff, " %02x", address);
@@ -207,7 +207,8 @@ void printpmbusData(struct PowerPmbus busData)
     printBits((busData.statusWord >> 8));
     Serial.print(F("   HIGH: 0x"));
     Serial.printf("%02x\n", busData.statusWord >> 8);
-    Serial.println(F(" "));  
+    Serial.println(F(" "));
+    ledflash();  
 }
 
 void publishPmbusData(struct PowerPmbus busData){
@@ -215,34 +216,34 @@ void publishPmbusData(struct PowerPmbus busData){
  if (count%6 == 0) {
       ++value;     
       snprintf (msg, MSG_BUFFER_SIZE, "PMBUS_Addr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
-      client.publish("pmbus/status", msg);
+      client.publish("rrh/pmbus/status", msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
       snprintf (msg, MSG_BUFFER_SIZE, "MFR_REV: %01x%01x%01x%01x%01x%01x",ver[0],ver[1],ver[2],ver[3],ver[4],ver[5]);
-      client.publish("pmbus/fru/version", msg);
+      client.publish("rrh/pmbus/fru/version", msg);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
-  client.publish("pmbus/input/Volt", msg);
+  client.publish("rrh/pmbus/input/volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.inputA);
-  client.publish("pmbus/input/Curr", msg);
+  client.publish("rrh/pmbus/input/curr", msg);
   
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputP);
-  client.publish("pmbus/input/Power", msg);
+  client.publish("rrh/pmbus/input/power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputV);
-  client.publish("pmbus/output/Volt", msg);
+  client.publish("rrh/pmbus/output/volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputA);
-  client.publish("pmbus/output/Curr", msg);
+  client.publish("rrh/pmbus/output/curr", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.outputP);
-  client.publish("pmbus/output/Power", msg);
+  client.publish("rrh/pmbus/output/power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp1);
-  client.publish("pmbus/sensor/temp1", msg);
+  client.publish("rrh/pmbus/sensor/temp1", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.statusWord >> 8, busData.statusWord & 0xFF);
-  client.publish("pmbus/status/word", msg);
+  client.publish("rrh/pmbus/status/word", msg);
 }
 
 void printBits(byte myByte){
@@ -449,12 +450,12 @@ void pmbusStatus()
        fa = pmbus_readStatusFan(ps_i2c_address);
        cm = pmbus_readStatusCml(ps_i2c_address);
        snprintf (msg, MSG_BUFFER_SIZE, "Fan:0x%02x Temp:0x%02x Cml:0x%02x", fa, tm, cm);
-       client.publish("pmbus/status/fanTempCml", msg);
+       client.publish("rrh/pmbus/status/fanTempCml", msg);
        vo = pmbus_readStatusVout(ps_i2c_address);
        io = pmbus_readStatusIout(ps_i2c_address);
        in = pmbus_readStatusInput(ps_i2c_address);
        snprintf (msg, MSG_BUFFER_SIZE, "Vout:0x%02x Iout:0x%02x Input:0x%02x", vo, io, in);
-       client.publish("pmbus/status/voutIoutInput", msg);
+       client.publish("rrh/pmbus/status/voutIoutInput", msg);
     }
 }
 
@@ -467,7 +468,7 @@ bool readpmbusdata()
         if(count%6 == 0){
             ++value;     
             snprintf (msg, MSG_BUFFER_SIZE, "PMBUS Polling Fail  Loop#%ld", value);
-            client.publish("pmbus/status", msg);
+            client.publish("rrh/pmbus/status", msg);
         }
       }
       return ret = false;
@@ -494,6 +495,13 @@ void printhelp(){
       delay(2000);  
 }
 
+void ledflash(){
+  ledstatus = !ledstatus;
+  if(ledstatus) digitalWrite(kLedPin, HIGH);
+  else digitalWrite(kLedPin, LOW);
+}
+
+
 void m24c32Checksum(){
     uint16_t checksum;
     eepromreadbytes(m24c32_address, 0, 128, eepbuffer);
@@ -503,7 +511,7 @@ void m24c32Checksum(){
     Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
       if(wifistatus && mqttflag){
         snprintf (msg, MSG_BUFFER_SIZE, "Ca: 0x%04x Re: 0x%02x%02x", checksum, eepbuffer[190], eepbuffer[191]);
-        client.publish("pmbus/eeprom/checksum", msg);      
+        client.publish("rrh/pmbus/eeprom/checksum", msg);      
        } 
     printFru(0, 0xFF , eepbuffer);   
 }

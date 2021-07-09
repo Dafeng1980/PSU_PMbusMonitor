@@ -1,5 +1,7 @@
-/*
- * 
+/*ESP8266 model: ESP-01S Board SDA = 0; SCL = 2; ESP-12F Board SDA = 4; SCl = 5;
+ *               HEKR 1.1 Board  SDA = 0; SCL = 13; LED = 4;  
+ *               Using the ESP8266 HEKR 1.1 Board (Purple);               
+ *   https://play.google.com/store/apps/details?id=com.app.vetru.mqttdashboard  Mqtt Dashboard APP
 
 */
 #include <Wire.h>
@@ -35,6 +37,7 @@ static bool Protocol = true;   // If true, endTransmission() sends a stop messag
 static bool wifistatus = true;
 static bool mqttflag = false;
 static bool buttonflag = true;
+static bool ledstatus = true;
 
 const char* ssid = "FAIOT";           // Enter your WiFi name
 const char* password = "20212021";    // Enter WiFi password
@@ -46,10 +49,10 @@ const uint16_t mqtt_port =  1883;
 const char* clientID = "zhsnpi1fdevice003";
 const char* mqtt_user = "dfiot";
 const char* mqtt_password = "123abc";
-const int SDA_PIN = 4;        //ESP-01S SDA = 0; SCL = 2;
-const int SCL_PIN = 5;       // ESP-12F SDA = 4; SCl = 5;
-const uint8_t kButtonPin = 13;
-const uint8_t kLedPin = 12;
+const int SDA_PIN = 0;         //ESP-01S Board SDA = 0; SCL = 2;   ESP8266 HEKR 1.1 Board  SDA = 0; SCL = 13
+const int SCL_PIN = 13;       // ESP-12F Board SDA = 4; SCl = 5;
+const uint8_t kButtonPin = 14;
+const uint8_t kLedPin = 4;
 
 char msg[MSG_BUFFER_SIZE];
 char ui_buffer[UI_BUFFER_SIZE];
