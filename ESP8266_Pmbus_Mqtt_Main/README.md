@@ -6,7 +6,7 @@
 
 * Add the [ESP8266 Arduino core & Libraries](https://github.com/esp8266/Arduino "https://github.com/esp8266/Arduino") <br/>
 
-* Install two apps on the phone:
+* Install below the apps on the phone:
 > 1. [Serial USB Terminal APP](https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en "https://play.google.com/store/apps/details?id=de.kai_morich.serial_usb_terminal&hl=en") (is a line-oriented terminal / console app for microcontrollers, arduinos and other devices with a serial / UART interface connected with a USB to serial converter to your android device).
 > 2. [MQTT Dash IoT APP](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en "https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en") (Use the ESP8266 with the MQTT protocol to send PMbus data to the cloud). 
 > 3. [MQTT Dashboard APP](https://play.google.com/store/apps/details?id=com.app.vetru.mqttdashboard "https://play.google.com/store/apps/details?id=com.app.vetru.mqttdashboard") Iot <br/>
@@ -21,6 +21,10 @@
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-01s.jpg)
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/ESP8266hekr.png)
 <br/>
+
+### Using USB to TTL device and TYPE-C to USB-A OTG cable for communication to the cellphone.
+![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/USB2tll.jpg)
+![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/TYPE-C2USBotg.png)
 
 ### Using Cellphone to Monitor PMbus data  with Serial USB Terminal APP <br/>
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/connected.jpg) 
