@@ -20,19 +20,20 @@
  
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-01s.jpg)
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/ESP8266hekr.png)
+![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/LM1117_3V3.jpg)
 <br/>
 
-### Using USB to TTL device and TYPE-C to USB-A OTG cable for communication to the cellphone.
+### Use USB to TTL device and TYPE-C to USB-A OTG cable for communication to the cell phone.
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/USB2tll.jpg)
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/TYPE-C2USBotg.png)
 
-### Using Cellphone to Monitor PMbus data  with Serial USB Terminal APP <br/>
+### Monitor PMbus data  with Serial USB Terminal APP <br/>
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/connected.jpg) 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/pmbus_Serial.png)   <br/> 
 
-### Using Cellphone to Monitor PMbus data with MQTT Dashboard APP: <br/>
+### Monitor PMbus data with MQTT Dashboard APP: <br/>
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/Mqtt_Dashboard.jpg) <br/>
 
-### MQTT Broker Server & Wi-Fi Hotspot :  <br/>
+### Use Raspberry-Pi to build a MQTT Broker Server & Wi-Fi Hotspot :  <br/>
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/Mqtt_server.jpg)  <br/> 
 
