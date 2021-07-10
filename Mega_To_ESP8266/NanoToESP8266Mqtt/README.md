@@ -1,4 +1,4 @@
-# Mega Nano Board & ESP8266 Baord 
+# Use Mega Nano Board to Monitor PMbus & ESP8266 Baord to pulish to MQTT
 
 Base on [Mega Nano Board & ESP8266 Board](https://github.com/Dafeng1980/AtmegaBoards). <br/> 
 
