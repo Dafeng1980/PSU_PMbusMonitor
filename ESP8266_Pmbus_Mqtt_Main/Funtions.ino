@@ -95,21 +95,22 @@ void mqttLoop(){
     }
     if (mqttflag){    
       client.loop();
-      client.subscribe("pmbus/set");
+      client.subscribe("sta/pmbus/set");
     }
 }
 
-//void buttoncheck(){
-//  if (digitalRead(kButtonPin) == 0 && buttonflag){
-//      delay(10);
-//        if(digitalRead(kButtonPin) == 0){
-//              key++;
-//              if (key >= 6) key = 0;
-//              Serial.printf("\n Key= %#01d:\n", key);
-//              buttonflag = false;
-//       }
-//    }
-//}
+void buttoncheck(){
+  if (digitalRead(kButtonPin) == 0 && buttonflag){
+      delay(10);
+        if(digitalRead(kButtonPin) == 0){
+              key++;
+              if (key >= 6) key = 0;
+              Serial.printf("\n Key= %#01d:\n", key);
+              buttonflag = false;
+       }
+    }
+}
+
 void serialread(){
   char readval;
   if (Serial.available())                //! Serial input read
@@ -224,69 +225,64 @@ void printpmbusData(struct PowerPmbus busData)
     printBits((busData.statusWord >> 8));
     Serial.print(F("   HIGH: 0x"));
     Serial.printf("%02x\n", busData.statusWord >> 8);
-    Serial.println(F(" "));  
+    Serial.println(F(" ")); 
+    ledflash();  
 }
 
 void publishPmbusData(struct PowerPmbus busData){
      
- if (count%10 == 0) {
+ if (count%6 == 0) {
       ++value;     
       snprintf (msg, MSG_BUFFER_SIZE, "PMBUS_Addr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
-      client.publish("pmbus/status", msg);
+      client.publish("sta/pmbus/status", msg);
       snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", pmbus_readVbulk(ps_i2c_address));
-      client.publish("pmbus/output/Vbulk", msg);
+      client.publish("sta/pmbus/output/vbulk", msg);
       Serial.print("Vbluk= ");
       Serial.println(msg);
       snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", pmbus_readVshare(ps_i2c_address));
-      client.publish("pmbus/output/Vshare", msg);
+      client.publish("sta/pmbus/output/vshare", msg);
       Serial.print("Vshare= ");
       Serial.println(msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
-//     snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
-//     client.publish("pmbus/fru/HWversion", msg);
-//     snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
-//     client.publish("pmbus/fru/BLversion", msg);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
-  client.publish("pmbus/input/Volt", msg);
+  client.publish("sta/pmbus/input/volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.inputA);
-  client.publish("pmbus/input/Curr", msg);
+  client.publish("sta/pmbus/input/curr", msg);
   
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputP);
-  client.publish("pmbus/input/Power", msg);
+  client.publish("sta/pmbus/input/power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputV);
-  client.publish("pmbus/output/Volt", msg);
+  client.publish("sta/pmbus/output/volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputVsb);
-  client.publish("pmbus/output/Vsb", msg);
+  client.publish("sta/pmbus/output/vsb", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputA);
-  client.publish("pmbus/output/Curr", msg);
+  client.publish("sta/pmbus/output/curr", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputAsb);
-  client.publish("pmbus/output/Csb", msg);
+  client.publish("sta/pmbus/output/csb", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.outputP);
-  client.publish("pmbus/output/Power", msg);
+  client.publish("sta/pmbus/output/power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.fanSpeed);
-  client.publish("pmbus/sensor/fanSpeed", msg);
+  client.publish("sta/pmbus/sensor/fanspeed", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp1);
-  client.publish("pmbus/sensor/temp1", msg);
+  client.publish("sta/pmbus/sensor/temp1", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp2);
-  client.publish("pmbus/sensor/temp2", msg);
+  client.publish("sta/pmbus/sensor/temp2", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp3);
-  client.publish("pmbus/sensor/temp3", msg);
+  client.publish("sta/pmbus/sensor/temp3", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.statusWord >> 8, busData.statusWord & 0xFF);
-//  Serial1.print("Publish message: ");
-//  Serial1.println(msg);
-  client.publish("pmbus/status/word", msg);
+  client.publish("sta/pmbus/status/word", msg);
 }
 
 void printBits(byte myByte){
@@ -327,12 +323,12 @@ void printFru(uint8_t first, uint8_t last, uint8_t *values) {
 
 void printhelp(){
       Serial.print(F("Here are commands can be used for Startrek: \r\n "));
-      Serial.print(F(" 1 > Set Ble LED ON  \r\n "));
+      Serial.print(F(" 1 > Test Blue LED \r\n "));
       Serial.print(F(" 2 > Set Blue LED OFF \r\n "));
-      Serial.print(F(" 3 > Read Calibration Data  \r\n "));
+      Serial.print(F(" 3 > Read Calibration Data \r\n "));
       Serial.print(F(" 4 > Verify FRU checksum \r\n "));
       Serial.print(F(" 5 > MFR Reversion \r\n "));
-      Serial.print(F(" w > PMbus wirte Enabled  \r\n "));
+      Serial.print(F(" w > PMbus wirte Enabled \r\n "));
       Serial.print(F(" h > HELP Shown  \r\n "));
       Serial.print(F(" 0 > Set Default \r\n "));
       delay(2000);  
@@ -536,29 +532,13 @@ void pmbusStatus()
        fa = pmbus_readStatusFan(ps_i2c_address);
        cm = pmbus_readStatusCml(ps_i2c_address);
        snprintf (msg, MSG_BUFFER_SIZE, "Fan:0x%02x Temp:0x%02x Cml:0x%02x", fa, tm, cm);
-       client.publish("pmbus/status/fanTempCml", msg);
+       client.publish("sta/pmbus/status/fanTempCml", msg);
        vo = pmbus_readStatusVout(ps_i2c_address);
        io = pmbus_readStatusIout(ps_i2c_address);
        in = pmbus_readStatusInput(ps_i2c_address);
        snprintf (msg, MSG_BUFFER_SIZE, "Vout:0x%02x Iout:0x%02x Input:0x%02x", vo, io, in);
-       client.publish("pmbus/status/voutIoutInput", msg);
+       client.publish("sta/pmbus/status/voutIoutInput", msg);
     }
-}
-
-void getversion(){
-  if(smbus_waitForAck(ps_i2c_address, 0x00))
-  {
-     readFw_version(ps_i2c_address, ver);
-     readBootloader_version(ps_i2c_address, ver+3);
-     Serial.printf("\n Firmware_REV: %02x%02x%02x \n", ver[0],ver[1],ver[2]);
-     Serial.printf("Bootloader_REV: %02x%02x%02x \n", ver[3],ver[4],ver[5]);
-     if(wifistatus && mqttflag){ 
-     snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
-     client.publish("pmbus/fru/HWversion", msg);
-     snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
-     client.publish("pmbus/fru/BLversion", msg);
-    }
-  } 
 }
 
 bool readpmbusdata()
@@ -570,7 +550,7 @@ bool readpmbusdata()
         if(count%6 == 0){
             ++value;     
             snprintf (msg, MSG_BUFFER_SIZE, "PMBUS Polling Fail  Loop#%ld", value);
-            client.publish("pmbus/status", msg);
+            client.publish("sta/pmbus/status", msg);
         }
       }
       return ret = false;
@@ -581,7 +561,7 @@ bool readpmbusdata()
       stbyflag = true;
       Serial.println("PMBUS Write En Set \n");
       if(wifistatus && mqttflag){
-      client.publish("pmbus/set", "PMbus_WE ");
+      client.publish("sta/pmbus/set", "PMbus_WE ");
       }
       pmbus_clearFaults(ps_i2c_address);
     }
@@ -606,6 +586,12 @@ bool readpmbusdata()
      return ret;  
 }
 
+void ledflash(){
+  ledstatus = !ledstatus;
+  if(ledstatus) digitalWrite(kLedPin, HIGH);
+  else digitalWrite(kLedPin, LOW);
+}
+
 void m24c32Checksum(){
     uint16_t checksum;
     eepromreadbytes(m24c32_address, 0, 128, eepbuffer);
@@ -615,7 +601,7 @@ void m24c32Checksum(){
     Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
       if(wifistatus){
         snprintf (msg, MSG_BUFFER_SIZE, "Ca: 0x%04x Re: 0x%02x%02x", checksum, eepbuffer[190], eepbuffer[191]);
-        client.publish("pmbus/eeprom/checksum", msg);      
+        client.publish("sta/pmbus/eeprom/checksum", msg);      
        } 
     printFru(0, 0xFF , eepbuffer);   
 }
@@ -632,23 +618,32 @@ uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len)
      return (sum);
  }
 
-void testBlueLedOn(){
+void blueLedOn(){
       pmbus_blueLed(ps_i2c_address, 0x01);
+      if(mqttflag) client.publish("sta/pmbus/status/blueled", "1");
       Serial.println(": Blue LED On :");
  }
 
-void testBlueLedOff(){
+void blueLedOff(){
       pmbus_blueLed(ps_i2c_address, 0x00);
+     if(mqttflag) client.publish("sta/pmbus/status/blueled", "0");
       Serial.println(": Blue LED OFF :");
  }
 
+void blueLedtest(){ 
+    bluestatus = !bluestatus;
+    if(bluestatus) blueLedOn();
+    else blueLedOff();
+    delay(100);
+}
+
 void readCalibration(){
-            read_calibrationOutputvolt();
-            delay(100);
+//            read_calibrationOutputvolt();
+//            delay(100);
             read_calibrationCount();
             delay(100);
             if(wifistatus && mqttflag){
-                client.publish("pmbus/set", "0");      
+                client.publish("sta/pmbus/set", "0");      
             }  
 }
 

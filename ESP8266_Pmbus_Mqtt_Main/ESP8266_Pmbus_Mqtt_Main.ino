@@ -1,3 +1,8 @@
+/*ESP8266 model: ESP-01S Board SDA = 0; SCL = 2; ESP-12F Board SDA = 4; SCl = 5;
+ *               HEKR 1.1 Board  SDA = 0; SCL = 13; LED = 4 Button = 14;
+ *   Using the ESP8266 HEKR 1.1 Board (Purple);               
+ *   https://play.google.com/store/apps/details?id=com.app.vetru.mqttdashboard  Mqtt Dashboard For  Android Iot APP
+*/
 #include <Wire.h>
 #include <ESP8266WiFi.h>
 #include <PubSubClient.h>
@@ -36,14 +41,16 @@ static uint8_t eepbuffer[256];
 static bool Protocol = true;   // If true, endTransmission() sends a stop message after transmission, releasing the I2C bus.
 static bool wifistatus = true;
 static bool mqttflag = false;
-//static bool buttonflag = true;
+static bool buttonflag = true;
 static bool pmbuswrite = false;
 static bool stbyflag = false;
 static bool scani2c = true;
+static bool ledstatus = true;
+static bool bluestatus = false;
 
 const char* ssid = "FAIOT";       // Enter your WiFi name
 const char* password = "20212021";    // Enter WiFi password
-const char* mqtt_server = "192.168.12.1";
+const char* mqtt_server = "192.168.12.1";  //Local Raspberry-Pi MQTT server(&WiFi hotspot).
 const uint16_t mqtt_port =  1883;
 //const char *mqtt_broker = "broker.emqx.io";  // Free Public MQTT broker 
 //const int mqtt_port = 1883; //There is no privacy protection for public access broker.
@@ -51,10 +58,11 @@ const uint16_t mqtt_port =  1883;
 const char* clientID = "zhsnpi1fdevice001";
 const char* mqtt_user = "dfiot";
 const char* mqtt_password = "123abc";
-const int SDA_PIN = 0;        //For ESP-01S SDA = 0; SCL = 2; Another ESP-12F SDA = 4; SCl = 5;
-const int SCL_PIN = 2;
-//const uint8_t kButtonPin = 13;  //ESP-01S dont Support Pin12,13;
-//const uint8_t kLedPin = 12;
+const int SDA_PIN = 0;        //For HEKR 1.1 Board
+const int SCL_PIN = 13;
+const uint8_t kButtonPin = 14;  
+const uint8_t kLedPin = 4;
+
 char ui_buffer[UI_BUFFER_SIZE];
 char msg[MSG_BUFFER_SIZE];
 unsigned long lastMsg = 0;
@@ -67,9 +75,11 @@ WiFiClient eClient;
 PubSubClient client(mqtt_server, mqtt_port, eClient);
 
 void setup() {
-//  pinMode(kButtonPin, INPUT_PULLUP);
+  pinMode(kButtonPin, INPUT_PULLUP);
+  pinMode(kLedPin, OUTPUT);
   Wire.begin(SDA_PIN, SCL_PIN);
   Serial.begin(38400);
+  digitalWrite(kLedPin, LOW);
   ps_i2c_address = PS_ADDRESS;
   setWifiMqtt(); 
   delay(100);
@@ -88,14 +98,14 @@ void loop() {
       lastMsg = now;
     if(readpmbusdata()){
       if(0 != pd.statusWord) pmbusStatus();      
-      if(0 == count%5) printpmbusData(pd);
+      if(0 == count%3) printpmbusData(pd);
       if(wifistatus && mqttflag) publishPmbusData(pd);     
       if(key == 1){
-         testBlueLedOn();
+         blueLedtest();
          key = 0;
       }
       else if(key == 2){
-        testBlueLedOff();
+        blueLedOff();
         key = 0;
       }
       else if(key == 3){
@@ -114,7 +124,7 @@ void loop() {
       }
     } 
     count++;
-//    buttonflag = true;  
+    buttonflag = true;  
   }
-//  buttoncheck();
+   buttoncheck();
 }
