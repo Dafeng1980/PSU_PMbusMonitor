@@ -1,4 +1,4 @@
-# Arduino Boards For Monitoring PSU PMbus-Data.  
+# Arduino Boards For Monitoring PSU PMbus Data.  
 
  * Base on the [Mega128L Nano Board & ESP8266 Board](https://github.com/Dafeng1980/AtmegaBoards).
  * [Arduino](https://www.arduino.cc/en/software) HW&SW Compatible. 

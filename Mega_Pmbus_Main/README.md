@@ -1,4 +1,4 @@
-# Mega Nano Board
+# Mega Nano Board for monitoring PMbus data
 
 * Base on [Mega128L Nano Board](https://github.com/Dafeng1980/AtmegaBoards).  <br/>
 * Install the [Andunio IDE](https://www.arduino.cc/en/software "https://www.arduino.cc/en/software") <br/>
