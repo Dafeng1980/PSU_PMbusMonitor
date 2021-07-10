@@ -1,36 +1,189 @@
 
-void setupWifi(){
+void setWifiMqtt(){
   delay(10);
-  wiset = true;
   wifistatus = true;
+  mqttflag = false;
   Serial.println();
   Serial.print("Connecting to ");
   Serial.println(ssid);
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     k++;
     Serial.print(".");
     if( k >= 30){
-    wiset = false;
     wifistatus = false;
-    Serial.printf("\n Wi-Fi Not Connect.. \n");
     break;
     }
   }
-  if(wiset){
-  randomSeed(micros());
-  Serial.println("");
-  Serial.println("WiFi connected");
-  Serial.println("IP address: ");
-  Serial.println(WiFi.localIP());
-  }
+  if(wifistatus){
+      randomSeed(micros());
+      Serial.println("");
+      Serial.println("WiFi connected");
+      Serial.println("IP address: ");
+      Serial.println(WiFi.localIP());
+      client.setCallback(callback);
+      if(client.connect(clientID, mqtt_user, mqtt_password)) mqttflag = true;
+      Serial.println("MQTT Broker Connected. \n "); 
+    } 
   else{
     Serial.println("");
     Serial.println("WiFi connect Failed");
+    }
+  k = 0; 
+}
+
+void reconnect() {
+  // Loop until we're reconnected
+  //client.connect(clientID, mqtt_user, mqtt_password);
+  while (!client.connected()) {
+     Serial.print("Attempting MQTT connection..."); // Attempt to connect   
+     String clientId = "ESP8266Client-";
+     clientId += String(random(0xffff), HEX);
+    if (client.connect((clientId.c_str()), mqtt_user, mqtt_password)) {
+      Serial.println("connected to broker");
+      client.publish("outTopic", "hello world reconnected");  // Once connected, publish an announcement...
+      mqttflag = true;   
+    }
+    else {
+      Serial.print("failed, rc=");
+      Serial.print(client.state());
+      Serial.println(" try again in 2 seconds");
+      k++;
+      delay(2000);   // Wait 2 seconds before retrying
+        if( k >= 5){
+            mqttflag = false;
+            if( k >= 15){
+                wifistatus = false;
+                Serial.println(F("WiFi connect Failed!!"));
+                delay(1000);
+                k = 0;
+                break;
+              }
+            break;
+         }                   
+      }
+   }
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] ");
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
   }
+  Serial.println();
+    if ((char)payload[0] == '0')      key = 0;
+    else if ((char)payload[0] == '1') key = 1;
+    else if ((char)payload[0] == '2') key = 2;
+    else if ((char)payload[0] == '3') key = 3;
+    else if ((char)payload[0] == '4') key = 4;
+    else if ((char)payload[0] == '5') key = 5;
+    else if ((char)payload[0] == '6') key = 6;
+    else if ((char)payload[0] == '7') key = 7;
+    else if ((char)payload[0] == '8') key = 8;
+    else if ((char)payload[0] == '9') key = 9;
+    else if ((char)payload[0] == 'o' || (char)payload[0] == 'O')
+    {
+            if(!psustatus){
+                  psOn();
+                  digitalWrite(kLedPin, HIGH);
+                   psustatus = true;
+                  Serial.println("PSU ON. \n ");
+                  delay(100);
+            }
+        }
+    else if ((char)payload[0] == 'R' || (char)payload[0] == 'r')
+    {
+           if(psustatus){
+                  psustatus = false;
+                  digitalWrite(kLedPin, LOW);                  
+                  Serial.println("PSU RESTAR ON. \n ");
+                  delay(100);
+                }
+                count = 0;
+    }
+    else key = 0;
+    Serial.printf("\n Key= %#01d:\n", key); 
+}
+
+void mqttLoop(){
+  if (!client.connected()) {
+            reconnect();            
+    }
+    if (mqttflag){    
+      client.loop();
+      client.subscribe("aws/pmbus/set");
+    }
+}
+
+void buttoncheck(){
+  if (digitalRead(kButtonPin) == 0 && buttonflag){
+      delay(10);
+        if(digitalRead(kButtonPin) == 0){         
+            if(!psustatus){
+                psOn();
+                digitalWrite(kLedPin, HIGH);
+                psustatus = true;
+                Serial.println("PSU ON. \n ");
+                delay(200);
+              }
+            else{
+              Serial.println("PSU ON STATUS. \n ");
+              key++;
+              if (key >= 10) key = 0;
+              Serial.printf("\n Key= %#01d:\n", key);
+            }
+          buttonflag = false;            
+       }
+    }
+}
+
+void serialread(){
+  char readval;
+  if (Serial.available())                //! Serial input read
+  {
+      readval = read_char();                     //! Reads the user command
+    if ((char)readval == '0')      key = 0;
+    else if ((char)readval == '1') key = 1;
+    else if ((char)readval == '2') key = 2;
+    else if ((char)readval == '3') key = 3;
+    else if ((char)readval == '4') key = 4;
+    else if ((char)readval == '5') key = 5;
+    else if ((char)readval == '6') key = 6;
+    else if ((char)readval == '7') key = 7;
+    else if ((char)readval == '8') key = 8;
+    else if ((char)readval == '9') key = 9;
+    else if ((char)readval == 'o' || (char)readval == 'O')
+    {
+            if(!psustatus){
+                  psOn();
+                  digitalWrite(kLedPin, HIGH);
+                  psustatus = true;
+                  Serial.println("PSU ON. \n ");
+                  delay(100);
+            }
+        }
+    else if ((char)readval == 'R' || (char)readval == 'r')
+      {
+           if(psustatus){
+                  psustatus = false;
+                  digitalWrite(kLedPin, LOW);                  
+                  Serial.println("PSU RESTAR ON. \n ");
+                  delay(100);
+                }
+                count = 0;
+      }
+    else if ((char)readval == 'h'  || (char)readval == 'H') printhelp();
+    else {
+      Serial.println("unknown command");
+      Serial.println("type \'h\' for help");
+      key = 0;       
+    }
+    Serial.printf("\n Key= %#01d:\n", key);
+ }
 }
 
 void i2cdetects(uint8_t first, uint8_t last) {
@@ -52,7 +205,7 @@ void i2cdetects(uint8_t first, uint8_t last) {
     if (address >= first && address <= last) {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
-      delay(2);
+      delay(5);
       if (error == 0) {  // device found       
         //Serial.printf(" %02x", address);
         sprintf(buff, " %02x", address);
@@ -70,120 +223,123 @@ void i2cdetects(uint8_t first, uint8_t last) {
   Serial.println("\n");
 }
 
+void printhelp(){
+      Serial.print(F("Here are commands can be used for AWS: \r\n "));
+      Serial.print(F(" 1 > ATS Read & Check \r\n "));
+      Serial.print(F(" 2 > Read Sensor Raw Data \r\n "));
+      Serial.print(F(" 3 > Read BlackBox Data \r\n "));
+      Serial.print(F(" 4 > TBD \r\n "));
+      Serial.print(F(" 5 > TBD \r\n "));
+      Serial.print(F(" o > PMbus Enabled PS-ON \r\n "));
+      Serial.print(F(" r > Reset PS-ON \r\n "));
+      Serial.print(F(" h > HELP Shown  \r\n "));
+      Serial.print(F(" 0 > Set Default \r\n "));
+      delay(2000);  
+}
+
 void printpmbusData(struct PowerPmbus busData)
 {
+    Serial.println(F("========== PMBUS DATA =========="));
     Serial.println(" ");
     Serial.print(F("PMBUS ADDRESS: 0x"));    //F function enable to decrease sram usage
     Serial.println(busData.i2cAddr, HEX);
-    Serial.println(F("IN: VS1 - VS2: "));
-    Serial.print(F("Vs1 : "));
+    Serial.println(F(" "));
+    Serial.print(F("Vs1_IN : "));
     Serial.print(busData.inputVs1, 2);
     Serial.print(F("V"));
-    Serial.print(F("     Vs2 : "));
+    Serial.print(F("     Vs2_IN : "));
     Serial.print(busData.inputVs2, 2);
     Serial.println(F("V")); 
-    Serial.println(F("INPUT: "));
-    Serial.print(F("Volt : "));
+    Serial.print(F("V_IN: "));
     Serial.print(busData.inputV, 2);
     Serial.print(F("V"));
-    Serial.print(F("     Curr : "));
+    Serial.print(F("      C_IN: "));
     Serial.print(busData.inputA, 3);
-    Serial.println(F("A"));
-    Serial.println(F(" "));
-    
-    Serial.println(F("OUTPUT: "));   
-    Serial.print(F("Vmain_Volt: "));
+    Serial.print(F("A"));
+    Serial.print(F("    P_IN: "));
+    Serial.print(busData.inputP, 2);
+    Serial.println(F("W"));
+    Serial.println(F(" "));     
+    Serial.print(F("V_OT: "));
     Serial.print(busData.outputV, 3);
     Serial.print(F("V"));
-    Serial.print(F("    Curr: "));
+    Serial.print(F("   C_OT: "));
     Serial.print(busData.outputA, 3);
-    Serial.println(F("A"));
-    
-    Serial.print(F("Vbulk: "));
-    Serial.print(busData.outputVcap, 2);
-    Serial.println(F("V"));
-//    Serial.print(F("    Sb_Curr: "));
-//    Serial.print(busData.outputAsb, 3);
-//    Serial.println(F("A"));
-    
-    Serial.print(F("Pin: "));
-    Serial.print(busData.inputP, 2);
-    Serial.print(F("W"));
-    Serial.print(F("    Pout: "));
+    Serial.print(F("A"));
+    Serial.print(F("   P_OT: "));
     Serial.print(busData.outputP, 2);
     Serial.println(F("W"));
-    Serial.println(F(" "));
+    Serial.println(F(" "));   
     
-          Serial.print(F("Temperature   8D: "));
-          Serial.print(busData.temp1, 0);
-          Serial.print(F("C"));
-          Serial.print(F("    8E: "));
-          Serial.print(busData.temp2, 0);
-          Serial.print(F("C"));
-          Serial.print(F("    8F: "));
-          Serial.print(busData.temp3, 0);
-          Serial.println(F("C"));
-          Serial.print(F("Temperature   T4: "));
-          Serial.print(busData.temp4, 0);
-          Serial.print(F("C"));
-          Serial.print(F("    T5: "));
-          Serial.print(busData.temp5, 0);
-          Serial.print(F("C"));
-          Serial.print(F("    T6: "));
-          Serial.print(busData.temp6, 0);
-          Serial.println(F("C"));
+    Serial.print(F("TEMP_8D: "));
+    Serial.print(busData.temp1, 0);
+    Serial.println(F("C"));
+    Serial.print(F("    8E: "));
+    Serial.print(busData.temp2, 0);
+    Serial.print(F("C"));
+    Serial.print(F("    8F: "));
+    Serial.print(busData.temp3, 0);
+    Serial.println(F("C"));
+    Serial.print(F("TEMP_T4: "));
+    Serial.print(busData.temp4, 0);
+    Serial.print(F("C"));
+    Serial.print(F("    T5: "));
+    Serial.print(busData.temp5, 0);
+    Serial.print(F("C"));
+    Serial.print(F("    T6: "));
+    Serial.print(busData.temp6, 0);
+    Serial.println(F("C"));
+    Serial.print(F("  Fan1 Speed: "));
+    Serial.print(busData.fanSpeed, 1);
+    Serial.println(F(" rpm"));
+    Serial.println(F(" "));
           
-          Serial.print(F("  Fan1 Speed: "));
-          Serial.print(busData.fanSpeed, 1);
-          Serial.println(F(" rpm"));
-          Serial.println(F(" "));
-          
-    Serial.print(F("STATUS WORD 0x"));
-    Serial.println(busData.statusWord, HEX);    
-    Serial.print(F("  0B "));
+    Serial.print(F("STATUS WORD: 0x"));
+    Serial.printf("%04x\n", busData.statusWord);    
+    Serial.print(F(" 0B "));
     printBits((busData.statusWord & 0xFF));
-    Serial.print(F("   LOW: 0x"));
-    Serial.println((busData.statusWord & 0xFF), HEX);
-    Serial.print(F("  0B "));
+    Serial.print(F("    LOW: 0x"));
+    Serial.printf("%02x\n", busData.statusWord & 0xFF);
+    Serial.print(F(" 0B "));
     printBits((busData.statusWord >> 8));
     Serial.print(F("   HIGH: 0x"));
-    Serial.println((busData.statusWord >> 8), HEX);
-
+    Serial.printf("%02x\n", busData.statusWord >> 8);
+   
     Serial.print(F("ATS STATUS WORD 0x"));
-    Serial.println(busData.atsStatusWord, HEX);    
+    Serial.printf("%04x\n", busData.atsStatusWord);    
     Serial.print(F("  0B "));
     printBits((busData.atsStatusWord & 0xFF));
     Serial.print(F("   LOW: 0x"));
-    Serial.println((busData.atsStatusWord & 0xFF), HEX);
+    Serial.printf("%02x\n", busData.atsStatusWord & 0xFF);
     Serial.print(F("  0B "));
     printBits((busData.atsStatusWord >> 8));
     Serial.print(F("   HIGH: 0x"));
-    Serial.println((busData.atsStatusWord >> 8), HEX);
+    Serial.printf("%02x\n", busData.atsStatusWord >> 8);
 
     Serial.print(F("CHG STATUS WORD 0x"));
-    Serial.println(busData.chgStatusWord, HEX);    
+    Serial.printf("%04x\n", busData.chgStatusWord);   
     Serial.print(F("  0B "));
     printBits((busData.chgStatusWord & 0xFF));
     Serial.print(F("   LOW: 0x"));
-    Serial.println((busData.chgStatusWord & 0xFF), HEX);
+    Serial.printf("%02x\n", busData.chgStatusWord & 0xFF);
     Serial.print(F("  0B "));
     printBits((busData.chgStatusWord >> 8));
     Serial.print(F("   HIGH: 0x"));
-    Serial.println((busData.chgStatusWord >> 8), HEX);
+    Serial.printf("%02x\n", busData.chgStatusWord >> 8);
 
     Serial.print(F("DCH STATUS WORD 0x"));
-    Serial.println(busData.dchStatusWord, HEX);    
+    Serial.printf("%04x\n", busData.dchStatusWord);   
     Serial.print(F("  0B "));
     printBits((busData.dchStatusWord & 0xFF));
     Serial.print(F("   LOW: 0x"));
-    Serial.println((busData.dchStatusWord & 0xFF), HEX);
+    Serial.printf("%02x\n", busData.dchStatusWord & 0xFF);
     Serial.print(F("  0B "));
     printBits((busData.dchStatusWord >> 8));
     Serial.print(F("   HIGH: 0x"));
-    Serial.println((busData.dchStatusWord >> 8), HEX);
-    
-    Serial.println(F(" ************ PMBUS DATA  ************ "));
-    Serial.println(F(" "));    
+    Serial.printf("%02x\n", busData.dchStatusWord >> 8);
+ 
+    Serial.println(F(" ")); 
+    ledflash();  
 }
 
 void publishPmbusData(struct PowerPmbus busData){
@@ -191,91 +347,79 @@ void publishPmbusData(struct PowerPmbus busData){
  if (count%10 == 0) {
       ++value;     
       snprintf (msg, MSG_BUFFER_SIZE, "PMBUS_Addr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
-      client.publish("pmbus/status", msg);
+      client.publish("aws/pmbus/status", msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
       snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.outputVcap);
-      client.publish("pmbus/output/Vbulk", msg);
-//     snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
-//     client.publish("pmbus/fru/HWversion", msg);
-//     snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
-//     client.publish("pmbus/fru/BLversion", msg);
+      client.publish("aws/pmbus/output/vbulk", msg);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
-  client.publish("pmbus/input/Volt", msg);
+  client.publish("aws/pmbus/input/volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputVs1);
-  client.publish("pmbus/input/Vs1", msg);
+  client.publish("aws/pmbus/input/vs1", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputVs2);
-  client.publish("pmbus/input/Vs2", msg);
+  client.publish("aws/pmbus/input/vs2", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.inputA);
-  client.publish("pmbus/input/Curr", msg);
+  client.publish("aws/pmbus/input/curr", msg);
   
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputP);
-  client.publish("pmbus/input/Power", msg);
+  client.publish("aws/pmbus/input/power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputV);
-  client.publish("pmbus/output/Volt", msg);
-
-//  snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputVsb);
-//  client.publish("pmbus/output/Vsb", msg);
+  client.publish("aws/pmbus/output/volt", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputA);
-  client.publish("pmbus/output/Curr", msg);
-
-//  snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputAsb);
-//  client.publish("pmbus/output/Csb", msg);
+  client.publish("aws/pmbus/output/curr", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.outputP);
-  client.publish("pmbus/output/Power", msg);
+  client.publish("aws/pmbus/output/power", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.fanSpeed);
-  client.publish("pmbus/sensor/fanSpeed", msg);
+  client.publish("aws/pmbus/sensor/fanspeed", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.fanSpeed2);
-  client.publish("pmbus/sensor/fanSpeed2", msg);
+  client.publish("aws/pmbus/sensor/fanspeed2", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp1);
-  client.publish("pmbus/sensor/temp1", msg);
+  client.publish("aws/pmbus/sensor/temp1", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp2);
-  client.publish("pmbus/sensor/temp2", msg);
+  client.publish("aws/pmbus/sensor/temp2", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp3);
-  client.publish("pmbus/sensor/temp3", msg);
+  client.publish("aws/pmbus/sensor/temp3", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp4);
-  client.publish("pmbus/sensor/temp4", msg);
+  client.publish("aws/pmbus/sensor/temp4", msg);
   
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp5);
-  client.publish("pmbus/sensor/temp5", msg);
+  client.publish("aws/pmbus/sensor/temp5", msg);
   
   snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp6);
-  client.publish("pmbus/sensor/temp6", msg);
+  client.publish("aws/pmbus/sensor/temp6", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.statusWord >> 8, busData.statusWord & 0xFF);
-  client.publish("pmbus/status/word", msg);
+  client.publish("aws/pmbus/status/word", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.atsStatusWord >> 8, busData.atsStatusWord & 0xFF);
-  client.publish("pmbus/status/ats", msg);
+  client.publish("aws/pmbus/status/ats", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.chgStatusWord >> 8, busData.chgStatusWord & 0xFF);
-  client.publish("pmbus/status/chg", msg);
+  client.publish("aws/pmbus/status/chg", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.dchStatusWord >> 8, busData.dchStatusWord & 0xFF);
-  client.publish("pmbus/status/dch", msg);
+  client.publish("aws/pmbus/status/dch", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%04x", busData.ioutrawData);
-  client.publish("pmbus/rawdata/iout", msg);
+  client.publish("aws/pmbus/rawdata/iout", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%04x", busData.vsenrawData);
-  client.publish("pmbus/rawdata/vsensor", msg);
+  client.publish("aws/pmbus/rawdata/vsensor", msg);
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%04x", busData.vorirawData);
-  client.publish("pmbus/rawdata/vor", msg);
-//  Serial1.print("Publish message: ");
-//  Serial1.println(msg);
+  client.publish("aws/pmbus/rawdata/vor", msg);
 }
 
 void printBits(byte myByte){
@@ -351,29 +495,29 @@ void pmbusStatus()
     Serial.println(F("========= READ ALL STATUS =========="));
     Serial.println(F(" "));
     w_val = pd.statusWord;
-    Serial.print(F("STATUS WORD 0x"));
-    Serial.println(w_val, HEX);
+    Serial.print(F("STATUS WORD: 0x"));
+    Serial.printf("%04x\n", w_val);
     msb = w_val >> 8;
     lsb = w_val & 0xFF;
-    Serial.print(F(" 0B "));
+    Serial.print(F("0B "));
     printBits(msb);
     Serial.print(F("  HIGH: 0x"));
-    Serial.print(msb, HEX);
+    Serial.printf("%02x", msb);
     Serial.print(F("     0B "));
     printBits(lsb);
     Serial.print(F("   LOW: 0x"));
-    Serial.println(lsb, HEX);
+    Serial.printf("%02x\n", lsb);
+   
     if(msb & 0x80){
         vo = pmbus_readStatusVout(ps_i2c_address);
         Serial.print(F("STATUS_VOUT 0B "));
         printBits(vo);
         Serial.print(F("    : 0x"));
-        Serial.println(vo, HEX);
+        Serial.printf("%02x\n", vo);
         if(vo & 0x80)
         Serial.println(F("STATUS_VOUT_OV_FAULT !! "));
         if(vo & 0x10)
-        Serial.println(F("STATUS_VOUT_UV_FAULT !! "));
-     
+        Serial.println(F("STATUS_VOUT_UV_FAULT !! "));     
     }
 
     if(msb & 0x40){
@@ -381,7 +525,7 @@ void pmbusStatus()
         Serial.print(F("STATUS_IOUT 0B "));
         printBits(io);
         Serial.print(F("    : 0x"));
-        Serial.println(io, HEX);
+        Serial.printf("%02x\n", io);
         if(io & 0x80)
         Serial.println(F("STATUS_IOUT_OC_FAULT !! "));
         if(io & 0x20)
@@ -397,7 +541,7 @@ void pmbusStatus()
         Serial.print(F("STATUS_INPUT 0B "));
         printBits(in);
         Serial.print(F("    : 0x"));
-        Serial.println(in, HEX);
+        Serial.printf("%02x\n", in);
         if(in & 0x20)
         Serial.println(F("STATUS_VIN_UV_WARNING !! "));
         if(in & 0x10)
@@ -417,7 +561,7 @@ void pmbusStatus()
         Serial.print(F("STATUS_FAN 0B "));
         printBits(fa);
         Serial.print(F("    : 0x"));
-        Serial.println(fa, HEX);
+        Serial.printf("%02x\n", fa);
         if(fa & 0x80)
         Serial.println(F("STATUS_FAN_1_FAULT !! "));
         if(fa & 0x40)
@@ -428,8 +572,7 @@ void pmbusStatus()
         Serial.println(F("STATUS_FAN_1_WARNING !! "));
     }
 
-    if(msb & 0x02)  Serial.println(F("STATUS_OTHERS_WARNING !! "));
-    
+    if(msb & 0x02)  Serial.println(F("STATUS_OTHERS_WARNING !! "));   
     if(lsb & 0x40)  Serial.println(F("STATUS_PS_OFF !! "));
     if(lsb & 0x20)  Serial.println(F("STATUS_MAIN_OUTPUT_OV_FAULT !! "));
 
@@ -438,7 +581,7 @@ void pmbusStatus()
         Serial.print(F("STATUS_IOUT 0B "));
         printBits(io);
         Serial.print(F("    : 0x"));
-        Serial.println(io, HEX);
+        Serial.printf("%02x\n", io);
         if(io & 0x80)
         Serial.println(F("STATUS_IOUT_OC_FAULT !! "));
         if(io & 0x40)
@@ -459,7 +602,7 @@ void pmbusStatus()
         Serial.print(F("STATUS_INPUT 0B "));
         printBits(in);
         Serial.print(F("    : 0x"));
-        Serial.println(in, HEX);
+        Serial.printf("%02x\n", in);
         if(in & 0x80)
         Serial.println(F("STATUS_VIN_OV_FAULT !! "));
         if(in & 0x40)
@@ -481,7 +624,7 @@ void pmbusStatus()
         Serial.print(F("STATUS_TEMPERATURE 0B "));
         printBits(tm);
         Serial.print(F("    : 0x"));
-        Serial.println(tm, HEX);
+        Serial.printf("%02x\n", tm);
         if(tm & 0x80)
         Serial.println(F("STATUS_OT_FAULT !! "));
         if(tm & 0x40)
@@ -493,7 +636,7 @@ void pmbusStatus()
       Serial.print(F("STATUS_CML 0B "));
       printBits(cm);
       Serial.print(F("    : 0x"));
-      Serial.println(cm, HEX);
+      Serial.printf("%02x\n", cm);
       if(cm & 0x80)
       Serial.println(F("STATUS_CML_InvalidCMD !! "));
       if(cm & 0x40)
@@ -508,42 +651,27 @@ void pmbusStatus()
       Serial.println(F("STATUS_CML_MEM_Logic_Fault !! "));
     }
     Serial.println(F(" "));
-    if(wifistatus){
+    if(wifistatus && mqttflag){
        tm = pmbus_readStatusTemp(ps_i2c_address);
        fa = pmbus_readStatusFan(ps_i2c_address);
        cm = pmbus_readStatusCml(ps_i2c_address);
        snprintf (msg, MSG_BUFFER_SIZE, "Fan:0x%02x Temp:0x%02x Cml:0x%02x", fa, tm, cm);
-       client.publish("pmbus/status/fanTempCml", msg);
+       client.publish("aws/pmbus/status/fanTempCml", msg);
        vo = pmbus_readStatusVout(ps_i2c_address);
        io = pmbus_readStatusIout(ps_i2c_address);
        in = pmbus_readStatusInput(ps_i2c_address);
        snprintf (msg, MSG_BUFFER_SIZE, "Vout:0x%02x Iout:0x%02x Input:0x%02x", vo, io, in);
-       client.publish("pmbus/status/voutIoutInput", msg);
+       client.publish("aws/pmbus/status/voutIoutInput", msg);
     }
 }
-//
-//void getversion(){
-//  if(smbus_waitForAck(ps_i2c_address, 0x00))
-//  {
-//     readFw_version(ps_i2c_address, ver);
-//     readBootloader_version(ps_i2c_address, ver+3);
-//     Serial.printf("\n  Firmware_REV: %02x%02x%02x \n", ver[0],ver[1],ver[2]);
-//     Serial.printf("Bootloader_REV: %02x%02x%02x \n", ver[3],ver[4],ver[5]);
-//     if(wifistatus){ 
-//     snprintf (msg, MSG_BUFFER_SIZE, "FW_REV: %02x%02x%02x",ver[0],ver[1],ver[2]);
-//     client.publish("pmbus/fru/HWversion", msg);
-//     snprintf (msg, MSG_BUFFER_SIZE, "BL_REV: %02x%02x%02x",ver[3],ver[4],ver[5]);
-//     client.publish("pmbus/fru/BLversion", msg);
-//    }
-//  } 
-//}
+
 
 bool readpmbusdata()
 {   
     bool ret = true;
   if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {
       Serial.println("PMBUS Polling Fail \n");
-      if(wifistatus){
+      if(wifistatus  && mqttflag){
         if(count%6 == 0){
             ++value;     
             snprintf (msg, MSG_BUFFER_SIZE, "PMBUS Polling Fail  Loop#%ld", value);
@@ -552,16 +680,6 @@ bool readpmbusdata()
       }
       return ret = false;
     } 
-//    if(pmbuswrite){
-//      pmbus_writeProtect(ps_i2c_address, 0x00); //0x00 pmbus write enable;
-//      pmbuswrite = false;
-//      stbyflag = true;
-//      Serial.println("PMBUS Write En Set \n");
-//      if(wifistatus){
-//      client.publish("pmbus/set", "PMbus_write En");
-//      }
-//      pmbus_clearFaults(ps_i2c_address);
-//    }
      pd.inputV = pmbus_readVin(ps_i2c_address);     
      pd.inputA = pmbus_readIin(ps_i2c_address);
      pd.inputP = pmbus_readPin(ps_i2c_address);      
@@ -585,24 +703,17 @@ bool readpmbusdata()
      pd.inputVs1 = ats_readVin_S1(ats_i2c_address);
      pd.inputVs2 = ats_readVin_S2(ats_i2c_address);
      pd.atsStatusWord = pmbus_readStatusWord(ats_i2c_address);
-//     if(stbyflag){
-//     pmbus_setPage(ps_i2c_address,1);                    //set Page to 1, read 12Vsb 
-//     pd.outputVsb = pmbus_readVout(ps_i2c_address);
-//     pd.outputAsb = pmbus_readIout(ps_i2c_address);
-//     pmbus_setPage(ps_i2c_address,0);
-//     }
      pd.i2cAddr = ps_i2c_address;
      return ret;  
 }
 
 void m24c32Checksum(){
     uint16_t checksum;
-    eepromreadbytes(m24c32_address, 0, 128, eepbuffer);
-    eepromreadbytes(m24c32_address, 128, 128, eepbuffer+128);       
+    eepromreadbytes(m24c32_address, 0, 256, eepbuffer);       
     checksum = calcCheckSum(eepbuffer, 192);
     Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
     Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
-      if(wifistatus){
+      if(wifistatus  && mqttflag){
         snprintf (msg, MSG_BUFFER_SIZE, "Ca: 0x%04x Re: 0x%02x%02x", checksum, eepbuffer[190], eepbuffer[191]);
         client.publish("pmbus/eeprom/checksum", msg);      
        } 
@@ -620,6 +731,14 @@ uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len)
      sum = 0x00FF & (~sum + 1);  
      return (sum);
  }
+
+
+void ledflash(){
+  ledstatus = !ledstatus;
+  if(ledstatus) digitalWrite(kLedPin, HIGH);
+  else digitalWrite(kLedPin, LOW);
+}
+
 
 void deviceAddrset(){
     scani2c = false;
