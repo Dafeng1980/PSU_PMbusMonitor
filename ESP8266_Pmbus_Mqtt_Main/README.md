@@ -1,6 +1,6 @@
 # ESP8266 Boards for monitoring PMbus data
 
-* Base on ESP-01S & HEKR 1.1 Boards (Low Cost!!) <br/>
+* Base on ESP-01S & HEKR 1.1 Boards (Low Cost!! For less than $1) <br/>
 
 * Install the [Andunio IDE](https://www.arduino.cc/en/software "https://www.arduino.cc/en/software") <br/>
 
