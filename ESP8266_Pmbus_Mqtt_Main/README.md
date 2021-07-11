@@ -16,7 +16,7 @@
 > 2. [MQTT Dash IoT APP](https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en "https://play.google.com/store/apps/details?id=net.routix.mqttdash&hl=en") (Use the ESP8266 with the MQTT protocol to send PMbus data to the cloud). 
 > 3. [MQTT Dashboard APP](https://play.google.com/store/apps/details?id=com.app.vetru.mqttdashboard "https://play.google.com/store/apps/details?id=com.app.vetru.mqttdashboard") Iot <br/>
 
-### ESP-01S Board & HEKR 1.1 Board:  <br/> 
+### ESP-01S Board & HEKR 1.1 Board & 3V3 Regulator Board:  <br/> 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-01s.jpg)
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/ESP8266hekr.png)
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/LM1117_3V3.jpg)
