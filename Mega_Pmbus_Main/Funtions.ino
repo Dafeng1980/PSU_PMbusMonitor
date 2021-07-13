@@ -15,7 +15,7 @@ void printhelp(){
       Serial.print(F(" 2 > Set Fan Full Speed  \r\n "));
       Serial.print(F(" 3 > Set CRbus Mode \r\n "));
       Serial.print(F(" 4 > Read MFR Revisions \r\n "));
-      Serial.print(F(" 5 > Detect Devices in PMbus \r\n "));
+      Serial.print(F(" 5 > Detect Devices in PMbus ON/OFF \r\n "));
       Serial.print(F(" 6 > TBD \r\n "));
       Serial.print(F(" 7 > TBD \r\n "));
       Serial.print(F(" 8 > Enter MFR Commands \r\n "));
@@ -374,7 +374,7 @@ void i2cdetects(uint8_t first, uint8_t last) {
     if (address >= first && address <= last) {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
-      delay(5);
+      delay(15);
       if (error == 0) {
         // device found
         Serial.printf(" %02x", address);
@@ -428,7 +428,7 @@ void serialread(){
     else if ((char)readval == '2') key = 2;
     else if ((char)readval == '3') key = 3;
     else if ((char)readval == '4') key = 4;
-    else if ((char)readval == '5') i2cdetects(0x00, 0x7F);    
+    else if ((char)readval == '5') scani2c = !scani2c;    
     else if ((char)readval == '6') key = 6;
     else if ((char)readval == '7') key = 7;
     else if ((char)readval == '8') mfr_menu_commands();
@@ -536,22 +536,22 @@ void monitorstatus(){
   }
 
  void pmbus_devices_detect(){
-   // scani2c = false;
-  i2cdetects(0x00, 0x7F);
-  if (digitalRead(kButtonPin) == 0){
-        delay(100);
-        if(digitalRead(kButtonPin) == 0){
-          buzzing();
-          scani2c = false;
-    }
-  }
- while(scani2c){
+  i2cdetects(0x00, 0x7F);  
+  while(scani2c){
     digitalWrite(kLedPin, HIGH);
     pmbusdetects();
     delay(50);
     digitalWrite(kLedPin, LOW);
     delay(210);
-    if(n > 0) break;
+    if(n > 0) scani2c = false;
+    if (digitalRead(kButtonPin) == 0){
+          delay(10);
+          if(digitalRead(kButtonPin) == 0){
+              buttonflag = false;
+              buzzing();                            
+              scani2c = false;
+          }
+       }
     }
  }
 

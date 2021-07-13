@@ -120,7 +120,8 @@ void loop()
               }        
           }
           buttonflag = true; 
-          count++;  
+          count++;
+          if(scani2c) i2cdetects(0x00, 0x7F);  
         }
      checkButton();
 }
