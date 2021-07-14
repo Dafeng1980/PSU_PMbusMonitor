@@ -49,6 +49,7 @@ static bool scani2c = true;    //initialze i2c address,
 static bool ledstatus = true;
 static bool statusflag = true;
 static bool pecflag = true;
+static bool pmbusflag = true;
 
 char ui_buffer[UI_BUFFER_SIZE];
 unsigned long previousMillis = 0;
@@ -64,7 +65,7 @@ void setup()
 {
   pinMode(kButtonPin, INPUT_PULLUP);
   pinMode(kLedPin, OUTPUT);
-  Serial.begin(38400);   //! Initialize the serial port to the PC 38400
+  Serial.begin(38400);    //! Initialize the serial port to the PC 38400
   Wire.begin();
   //Wire.setClock(50000);    // Define the I2C clock, default is 100kHz;
   digitalWrite(kLedPin, LOW);  
@@ -122,6 +123,6 @@ void loop()
           buttonflag = true; 
           count++;
           if(scani2c) i2cdetects(0x00, 0x7F);  
-        }
+        }    
      checkButton();
 }
