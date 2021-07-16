@@ -1,12 +1,13 @@
 /*!
  * The Smbus.ino Pmbus.ino inspired By below link
  * https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html
- *  #include <Wire.h>
+ * #include <Wire.h>
  * Need to modify "Wire.h", Wire.cpp", added the Wire.requestFromS to Support SMbus Wire.requestFrom.
  * in folder "%USERPROFILE%\AppData\Local\Arduino15\packages\MegaCore\hardware\avr\2.1.3\libraries\Wire\src"
  * 
- * 
+ * add the link to boards Manager URLs:  https://mcudude.github.io/MegaCore/package_MCUdude_MegaCore_index.json and intalled the MegaCore Boaeds.
  * Board ATmega128L;  External Clock@7.3728Mhz upload baud-rate:115200;
+ * 
 */
 #include <Wire.h>
 
@@ -50,6 +51,7 @@ static bool ledstatus = true;
 static bool statusflag = true;
 static bool pecflag = true;
 static bool pmbusflag = true;
+static bool standbyflag = false;
 
 char ui_buffer[UI_BUFFER_SIZE];
 unsigned long previousMillis = 0;
@@ -59,7 +61,7 @@ uint8_t n = 0 ;
 const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
-const uint16_t kPmInterval = 333;  //PMbus refresh rate (miliseconds) 
+const uint16_t kPmInterval = 666;  //PMbus refresh rate (miliseconds) 
 
 void setup()
 {
@@ -96,13 +98,13 @@ void loop()
                 key = 0;
             }
             else if(key == 3){
-               // SetVout2_50V();
+               standbystatus();
                 key = 0;
             }
             else if(key == 4){
-               // ReadMfrRev();
+               Serial.println(F("TBD "));
                 key = 0;
-                delay(5000);
+                delay(100);
               }
             else if(key == 5){
                 key = 0;
@@ -122,7 +124,7 @@ void loop()
           }
           buttonflag = true; 
           count++;
-          if(scani2c) i2cdetects(0x00, 0x7F);  
+          if(scani2c) i2cdetects(0x00, 0x7F);
         }    
      checkButton();
 }

@@ -1,31 +1,31 @@
 
 void print_memu()
         {                   
-           Serial.print(F("\n Pmbus Program For CRPS "));
-           Serial.print(F(" To Read The Voltage Current Sensor Status \n"));
-           Serial.print(F(" Set the CRbus Mode, Detect PMbus Device etc.\n"));
+           Serial.print(F("PSU Debug Tools For PMbus \n"));
+           Serial.print(F("Get Voltage Status etc. and Detect Devices \n"));
+           Serial.print(F("Can Send The Customize Command for PMbus\n"));
            Serial.println(F("\nEnter command:"));
            printhelp();
-           delay(500);
+           Serial.println(F(" "));
         }
 
 void printhelp(){
       Serial.print(F("Here are commands can be used For XXX Model.\r\n"));
-      Serial.print(F(" 1 > Moitor All Status and Show \r\n "));
-      Serial.print(F(" 2 > Set Fan Full Speed  \r\n "));
-      Serial.print(F(" 3 > Set CRbus Mode \r\n "));
-      Serial.print(F(" 4 > Read MFR Revisions \r\n "));
-      Serial.print(F(" 5 > Detect Devices in PMbus ON/OFF \r\n "));
-      Serial.print(F(" 6 > TBD \r\n "));
+      Serial.print(F(" 1 > Moitor the PSU Status Word. \r\n "));
+      Serial.print(F(" 2 > Get All PMbus Sensor.  \r\n "));
+      Serial.print(F(" 3 > Get Standby Data \r\n "));
+      Serial.print(F(" 4 > Get The MFR Revisions \r\n "));
+      Serial.print(F(" 5 > Detect The Devices in PMbus. \r\n "));
+      Serial.print(F(" 6 > Set to CR mode \r\n "));
       Serial.print(F(" 7 > TBD \r\n "));
       Serial.print(F(" 8 > Enter MFR Commands \r\n "));
       Serial.print(F(" 9 > Enable/Disable PEC \r\n "));
       Serial.print(F(" 0 > Set to Default \r\n "));
-      Serial.print(F(" c > Send Customize Pmbus Commands \r\n "));
-      Serial.print(F(" h > Help Display \r\n "));
-      delay(2000);  
+      Serial.print(F(" r > Reset the PMbus Address \r\n "));
+      Serial.print(F(" c > Set to Send The Customize Pmbus Commands \r\n "));
+      Serial.print(F(" h > Help \r\n "));
+      delay(500);  
 }
-
 
 void mfr_menu_commands(){
         uint8_t user_command;       
@@ -50,9 +50,6 @@ void mfr_menu_commands(){
 //      getId();
 //      getModel();
 //      getRevision();
-//      getLocation();
-//      getDate();
-//      getSerial();
       Serial.println(F(" "));
         break;
       case 2:
@@ -116,7 +113,6 @@ void mfr_menu_commands(){
   while (user_command != 'm');
 }
 
-
 void printpmbusData(struct PowerPmbus busData)
 {
     ledflash();
@@ -145,10 +141,27 @@ void printpmbusData(struct PowerPmbus busData)
     Serial.print(busData.outputP, 2);
     Serial.println(F("W"));
     Serial.println(F(" "));   
-    
+    if(standbyflag){
+    Serial.print(F("V_Standby: "));
+    Serial.print(busData.outputVsb, 3);
+    Serial.print(F("V"));
+    Serial.print(F("    C_Standby: "));
+    Serial.print(busData.outputAsb, 3);
+    Serial.println(F("A"));
+    Serial.println(F(" "));
+    }
     Serial.print(F("TEMP_8D: "));
     Serial.print(busData.temp1, 0);
+    Serial.print(F("C"));
+    Serial.print(F("  TEMP_8E: "));
+    Serial.print(busData.temp2, 0);
+    Serial.print(F("C"));
+    Serial.print(F("  TEMP_8F: "));
+    Serial.print(busData.temp3, 0);
     Serial.println(F("C"));
+    Serial.print(F("FANSPEED_0x90: "));
+    Serial.print(busData.fanSpeed, 0);
+    Serial.println(F("rpm"));
     Serial.println(F(" "));
           
     Serial.print(F("STATUS WORD: 0x"));
@@ -429,19 +442,23 @@ void serialread(){
     else if ((char)readval == '2') key = 2;
     else if ((char)readval == '3') key = 3;
     else if ((char)readval == '4') key = 4;
-    else if ((char)readval == '5') scani2c = !scani2c;    
+    else if ((char)readval == '5') i2cdetectsstatus();    
     else if ((char)readval == '6') key = 6;
     else if ((char)readval == '7') key = 7;
     else if ((char)readval == '8') mfr_menu_commands();
     else if ((char)readval == '9') pecstatus();
-    else if ((char)readval == 'h'  || (char)readval == 'H') printhelp();
-    else if ((char)readval == 'c'  || (char)readval == 'C') pmbus_commands();
+    else if ((char)readval == 'c'  || (char)readval == 'C') pmbus_commands();   
+    else if ((char)readval == 'r'  || (char)readval == 'R') reset_address();
+    else if ((char)readval == 'h'  || (char)readval == 'H') {
+      printhelp();
+      delay(2500);
+    }
     else {
       Serial.println(F("unknown command"));
       Serial.println(F("type \'h\' for help"));
       key = 0;       
     }
-    Serial.printf("\n Key= %#01d:\n", key);
+    Serial.printf("\nKey= %#01d:\n", key);
  }
 }
 
@@ -484,7 +501,7 @@ bool readpmbusdata()
       bool ret = true;
       if(!pmbusflag) return ret = false;
       if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {  //0x00 PAGE read
-          Serial.println("PMBUS Polling Fail \n");      
+          Serial.println("PMBUS Polling Fail, Type \'h\' for Help \n");      
           return ret = false;
         }
      pd.i2cAddr = ps_i2c_address;
@@ -499,10 +516,12 @@ bool readpmbusdata()
      pd.temp3 = pmbus_readMtemp(ps_i2c_address);        //temp sensor 0x8F  
      pd.fanSpeed = pmbus_readFanSpeed1(ps_i2c_address);
      pd.statusWord = pmbus_readStatusWord(ps_i2c_address); 
+     if(standbyflag){
      pmbus_setPage(ps_i2c_address,1);                    //set Page to 1, read 12Vsb 
      pd.outputVsb = pmbus_readVout(ps_i2c_address);
      pd.outputAsb = pmbus_readIout(ps_i2c_address);
-     pmbus_setPage(ps_i2c_address,0); 
+     pmbus_setPage(ps_i2c_address,0);
+     } 
      delay(20);     
 }
 
@@ -517,6 +536,7 @@ void checkButton(){
               buttonflag = false;
         }
     }
+    
 }
 
 void ledflash(){
@@ -534,11 +554,29 @@ void pecstatus(){
 
 void monitorstatus(){
   statusflag = !statusflag;
-  if(pecflag) Serial.print(F("Status Monitor Enable\n"));
+  if(statusflag) Serial.print(F("Status Monitor Enable\n"));
   else Serial.print(F("Status Monitor Disable\n"));
   }
 
- void pmbus_devices_detect(){
+void standbystatus(){
+  standbyflag = !standbyflag;
+  if(standbyflag) Serial.print(F("Standby Enable\n"));
+  else Serial.print(F("Standby Disable\n"));
+  }
+
+void i2cdetectsstatus(){
+  scani2c = !scani2c;
+  if(scani2c) {
+    Serial.print(F("I2C Detect Device Enable\n"));
+    pmbusflag = false;
+  }
+  else {
+    Serial.print(F("I2C Detect Device Disable\n"));
+    pmbusflag = true;
+  }
+}
+
+void pmbus_devices_detect(){
   i2cdetects(0x00, 0x7F);  
   while(scani2c){
     digitalWrite(kLedPin, HIGH);
@@ -557,6 +595,18 @@ void monitorstatus(){
        }
     }
  }
+
+void reset_address(){
+      Serial.printf("Current PSU Address is %#02X; Patner PSU Address is %#02X.\n", ps_i2c_address, ps_patner_address);
+      Serial.println(F("Input PSU address: (Can recognize Hex, Decimal, Octal, or Binary)"));
+      Serial.println(F("Example: Hex: 0x11 (0x prefix) Octal: O21 (letter O prefix) Binary: B10001" ));
+      ps_i2c_address = read_int();     
+      Serial.printf("New PSU address: %#02X\n", ps_i2c_address);
+      Serial.println(F("Input Patner PSU address:"));
+      ps_patner_address = read_int();
+      Serial.printf("New Patner PSU address: %#02X\n", ps_patner_address);
+      delay(1000);
+}
 
 void m24c32Checksum(){
     uint16_t checksum;
@@ -579,8 +629,6 @@ uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len)
      sum = 0x00FF & (~sum + 1);  
      return (sum);
  }
-
-
  
 void pmbus_commands(){
       uint8_t user_command;
@@ -596,7 +644,11 @@ void pmbus_commands(){
             uint8_t datablock_b[32];
             uint16_t blocksize_b;
               
-        }pm;       
+        }pm;
+  Serial.println(F("Input Value Can recognize Hex, Decimal, Octal, or Binary"));
+  Serial.println(F("Example: Hex:0x11(0x prefix) Octal:O21(O prefix) Binary:B10001"));
+  Serial.printf("PSU Address is:%#02X\n",  pd.i2cAddr);
+  Serial.println(F(" "));             
   do{  
     Serial.print(F("  1-Sent Byte \n"));
     Serial.print(F("  2-Read Byte \n"));
@@ -753,7 +805,7 @@ void pmbus_commands(){
       case 9:
       Serial.println(F("Input the Pmbus address "));
       pd.i2cAddr = read_int();     
-      Serial.printf("Address:%02X\n", pd.i2cAddr);
+      Serial.printf("Address Set:%02X\n", pd.i2cAddr);
       delay(1000);
         break;
                 
