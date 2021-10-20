@@ -162,6 +162,7 @@ uint8_t eepromreadbyte(int address, uint16_t offset)
 {
   uint8_t data;
   Wire.beginTransmission(address);
+  if(eepromsize)
   Wire.write((int)(offset >> 8));
   Wire.write((int)(offset & 0xFF));
   Wire.endTransmission(I2C_NOSTOP);
@@ -173,6 +174,7 @@ uint8_t eepromreadbyte(int address, uint16_t offset)
 void eepromreadbytes(int address, uint16_t offset, int count, uint8_t * dest)
 {
   Wire.beginTransmission(address);
+  if(eepromsize)
   Wire.write((int)(offset >> 8));
   Wire.write((int)(offset & 0xFF));
   Wire.endTransmission(I2C_NOSTOP);

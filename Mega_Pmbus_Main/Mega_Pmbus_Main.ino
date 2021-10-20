@@ -43,7 +43,8 @@ static uint8_t eepbuffer[256];
 static uint8_t key = 0;
 static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
-static int m24c32_address;
+static int eeprom_address;
+static uint8_t unitname;
 static bool Protocol = true;   // If true, endTransmission() sends a stop message after transmission, releasing the I2C bus.
 static bool buttonflag = true;
 static bool scani2c = true;    //initialze i2c address, 
@@ -52,6 +53,7 @@ static bool statusflag = true;
 static bool pecflag = true;
 static bool pmbusflag = true;
 static bool standbyflag = false;
+static bool eepromsize = true;   // true (eeprom data size > 0x100). 
 
 char ui_buffer[UI_BUFFER_SIZE];
 unsigned long previousMillis = 0;
@@ -61,24 +63,25 @@ uint8_t n = 0 ;
 const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
-const uint16_t kPmInterval = 666;  //PMbus refresh rate (miliseconds) 
+const uint16_t kPmInterval = 1500;  //PMbus refresh rate (miliseconds) 
 
 void setup()
 {
   pinMode(kButtonPin, INPUT_PULLUP);
   pinMode(kLedPin, OUTPUT);
+  digitalWrite(kLedPin, LOW); 
   Serial.begin(38400);    //! Initialize the serial port to the PC 38400
   Wire.begin();
-  //Wire.setClock(50000);    // Define the I2C clock, default is 100kHz;
-  digitalWrite(kLedPin, LOW);  
+  //Wire.setClock(50000);    // Define the I2C clock, default is 100kHz;   
   ps_i2c_address = PS_I2C_ADDRESS;
   ps_patner_address = PS_PARTNER_ADDRESS;
   pecflag = PEC_ENABLE;      
   print_memu();
   pmbus_devices_detect();
-  Serial.printf("\nPMBUSADDRESS %#02x:\n", ps_i2c_address);
-    key  = 0;
-  }
+  eeprom_address = 0x50 + (ps_i2c_address & 0x07);
+  key  = 0;
+  unitname = 0;
+ }
 
 void loop()
 {  
@@ -99,7 +102,7 @@ void loop()
             }
             else if(key == 3){
                standbystatus();
-                key = 0;
+               key = 0;
             }
             else if(key == 4){
                Serial.println(F("TBD "));
