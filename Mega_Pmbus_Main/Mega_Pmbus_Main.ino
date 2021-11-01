@@ -1,4 +1,4 @@
-/*!
+ /*!
  * The Smbus.ino Pmbus.ino inspired By below link
  * https://www.analog.com/en/design-center/evaluation-hardware-and-software/evaluation-development-platforms/linduino.html
  * #include <Wire.h>
@@ -7,17 +7,14 @@
  * 
  * add the link to boards Manager URLs:  https://mcudude.github.io/MegaCore/package_MCUdude_MegaCore_index.json and intalled the MegaCore Boaeds.
  * Board ATmega128L;  External Clock@7.3728Mhz upload baud-rate:115200;
- * 
+ * Author: Dafeng 2020
 */
 #include <Wire.h>
-
 #define TWI_BUFFER_SIZE 128
 #define PEC_ENABLE  1          //Smbus PEC(Packet Error Code) support. 1 = Enabled, 0 = Disabled.
-#define UI_BUFFER_SIZE 64
+#define UI_BUFFER_SIZE 100
 #define I2C_NOSTOP 0
 #define PS_I2C_ADDRESS 0x58         // PMbus Power Supply address 0x58/B0;
-//#define PS_I2C_ADDRESS 0x29       // PMbus Power Supply address 0x29/52;
-//#define PS_I2C_ADDRESS 0x70
 #define PS_PARTNER_ADDRESS 0x5B
 
 static struct PowerPmbus
@@ -39,12 +36,15 @@ static struct PowerPmbus
 }pd;
 
 static uint8_t ver[6];
+uint8_t smbus_data[32];
 static uint8_t eepbuffer[256];
 static uint8_t key = 0;
 static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
 static int eeprom_address;
 static uint8_t unitname;
+static uint16_t pmInterval = 1500;  //PMbus refresh rate (miliseconds) 
+
 static bool Protocol = true;   // If true, endTransmission() sends a stop message after transmission, releasing the I2C bus.
 static bool buttonflag = true;
 static bool scani2c = true;    //initialze i2c address, 
@@ -63,7 +63,6 @@ uint8_t n = 0 ;
 const uint8_t kBuzzerPin = 15;
 const uint8_t kButtonPin = 2;
 const uint8_t kLedPin = 13;
-const uint16_t kPmInterval = 1500;  //PMbus refresh rate (miliseconds) 
 
 void setup()
 {
@@ -72,7 +71,7 @@ void setup()
   digitalWrite(kLedPin, LOW); 
   Serial.begin(38400);    //! Initialize the serial port to the PC 38400
   Wire.begin();
-  //Wire.setClock(50000);    // Define the I2C clock, default is 100kHz;   
+  //Wire.setClock(50000);    // Set the I2C clock, default(100kHz);   
   ps_i2c_address = PS_I2C_ADDRESS;
   ps_patner_address = PS_PARTNER_ADDRESS;
   pecflag = PEC_ENABLE;      
@@ -87,8 +86,9 @@ void loop()
 {  
   serialread();
   unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= kPmInterval){
+  if (currentMillis - previousMillis >= pmInterval){
         previousMillis = currentMillis;
+        if(scani2c) i2cdetects(0x00, 0x7F);
         if(readpmbusdata()){
             if(0 != pd.statusWord && statusflag) pmbusStatus();      
             if(0 == count%5) printpmbusData(pd);
@@ -97,37 +97,22 @@ void loop()
                 key = 0;
             }
             else if(key == 2){
-              //  SetVout2_54V();
+                standbystatus();
                 key = 0;
             }
             else if(key == 3){
-               standbystatus();
+               Serial.println(F("TBD "));
+               delay(100);
                key = 0;
             }
             else if(key == 4){
                Serial.println(F("TBD "));
-                key = 0;
-                delay(100);
-              }
-            else if(key == 5){
-                key = 0;
-              }
-            else if(key == 6){
-                key = 0;
-              }
-            else if(key == 7){
-                key = 0;
-              }
-            else if(key == 8){
-                key = 0;
-              }
-            else if(key == 9){
-                key = 0;
-              }        
+               delay(100);
+               key = 0;                
+              }       
           }
-          buttonflag = true; 
           count++;
-          if(scani2c) i2cdetects(0x00, 0x7F);
+          buttonflag = true;                     
         }    
      checkButton();
 }

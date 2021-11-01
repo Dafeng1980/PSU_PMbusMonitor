@@ -1,30 +1,30 @@
 
 void print_memu()
         {                   
-           Serial.print(F("PSU Debug Tools For PMbus \n"));
-           Serial.print(F("Get Voltage Status etc. and Detect Devices \n"));
-           Serial.print(F("Can Send The Customize Command for PMbus\n"));
+           Serial.print(F("PSU PMbus Debug Tools (Smbus Protocol)\n"));
+           Serial.print(F("Monitoring PSU Status etc. and Detect i2c Devices\n"));
+           Serial.print(F("Send the Smbus Protocol Command.\n"));
            Serial.println(F("\nEnter command:"));
            printhelp();
            Serial.println(F(" "));
         }
 
 void printhelp(){
-      Serial.print(F("\n Here are commands can be used For Mega PMBUS.\r\n"));
-      Serial.print(F(" 1 > Moitor the PSU Status Word. \r\n "));
-      Serial.print(F(" 2 > Get All PMbus Sensor.  \r\n "));
-      Serial.print(F(" 3 > Get Standby Data \r\n "));
-      Serial.print(F(" 4 > Get The MFR Revisions \r\n "));
-      Serial.print(F(" 5 > Detect The Devices in PMbus. \r\n "));
-      Serial.print(F(" 6 > Set to CR mode \r\n "));
+      Serial.print(F("\n Here are commands can be used.\r\n "));
+      Serial.print(F(" 1 > Moitor the PSU Status Word \r\n "));
+      Serial.print(F(" 2 > Set Standby/(Other Page) \r\n "));
+      Serial.print(F(" 3 > TBD \r\n "));
+      Serial.print(F(" 4 > TBD \r\n "));
+      Serial.print(F(" 5 > Detect PSU Address in PMbus. \r\n "));
+      Serial.print(F(" 6 > TBD \r\n "));
       Serial.print(F(" 7 > TBD \r\n "));
       Serial.print(F(" 8 > Enter MFR Commands \r\n "));
       Serial.print(F(" 9 > Enable/Disable PEC \r\n "));
-      Serial.print(F(" 0 > Set to Default \r\n "));
+      Serial.print(F(" 0 > Set All to Default \r\n "));
       Serial.print(F(" a > Set the PUS Model \r\n "));
-      Serial.print(F(" e > Read the EEPROM \r\n "));
-      Serial.print(F(" c > Send The Customize Pmbus Commands \r\n "));
-      Serial.print(F(" r > Set the PMbus Address \r\n "));
+      Serial.print(F(" e > Set the PMbus Interval Timing \r\n "));
+      Serial.print(F(" c > Enter The SMbus Protocol Commands & Read EEPROM \r\n "));
+      Serial.print(F(" r > Set the PMbus/SMbus Address \r\n "));
       Serial.print(F(" h > Help \r\n "));
       Serial.println("");
       Serial.print("Enter a command: ");      
@@ -35,15 +35,15 @@ void mfr_menu_commands(){
         uint8_t user_command;       
   do{  
     Serial.print(F("  1-Read MFR Info \n"));
-    Serial.print(F("  2-Read MFR FW REVISION\n"));
-    Serial.print(F("  3-Read MFR_BLACKBOX\n"));
-    Serial.print(F("  4-Clear the 05&06 Cal \n"));
-    Serial.print(F("  5-Margin High\n"));
-    Serial.print(F("  6-Margin Low\n"));
-    Serial.print(F("  7-Mass Erase the PFlash\n"));
+    Serial.print(F("  2-Clear The Faults \n"));
+    Serial.print(F("  3-TBD \n"));
+    Serial.print(F("  4-TBD \n"));
+    Serial.print(F("  5-Margin High \n"));
+    Serial.print(F("  6-Margin Low \n"));
+    Serial.print(F("  7-Mass Erase the PFlash \n"));
     Serial.print(F("  8-Reads UCD3138 Pflash At 2k_32K_64K Checksum \n"));
     Serial.print(F("  9-Erase&Write UCD3138 Pflash At 2k Checksum \n"));
-    Serial.print(F("  m-Main Menu\n"));
+    Serial.print(F("  m-Main Menu \n"));
     Serial.print(F("\nEnter a command: "));  
     user_command = read_int();                              //! Reads the user command
     if (user_command == 'm')   Serial.print(F("m\n"));     // Print m if it is entered
@@ -408,30 +408,22 @@ void printBits(byte myByte){
 void i2cdetects(uint8_t first, uint8_t last) {
   uint8_t i, address, error;
   //char buff[10];
-  // table header
-  Serial.print("   ");
+  Serial.print("   ");            // table header
   for (i = 0; i < 16; i++) {
     Serial.printf("%3x", i);
 //    sprintf(buff, "%3x", i);
 //    Serial.print(buff);
   }
-  // table body
-  // addresses 0x00 through 0x77
-  for (address = 0; address <= 127; address++) {
-    if (address % 16 == 0) {
+  for (address = 0; address <= 127; address++) {             // addresses 0x00 through 0x77
+    if (address % 16 == 0) {                            // table body
       Serial.printf("\n0x%02x:", address & 0xF0);
-//      sprintf(buff, "\n%02x:", address & 0xF0);
-//      Serial.print(buff);
     }
     if (address >= first && address <= last) {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
       delay(10);
-      if (error == 0) {
-        // device found
+      if (error == 0) {                           // device found
         Serial.printf(" %02x", address);
-//        sprintf(buff, " %02x", address);
-//        Serial.print(buff);
       } else if (error == 4) {    // other error      
         Serial.print(" XX");
       } else {                   // error = 2: received NACK on transmit of address              
@@ -467,7 +459,7 @@ void printchar(uint8_t *values, uint8_t bsize){
   for(int i = 0; i < bsize; i++){
     Serial.printf(" %02x", values[i]);
   }
-   Serial.println();
+   Serial.println(F(" "));
 }
 
 void serialread(){
@@ -486,8 +478,8 @@ void serialread(){
     else if ((char)readval == '8') mfr_menu_commands();
     else if ((char)readval == '9') pecstatus();
     else if ((char)readval == 'a'  || (char)readval == 'A') setModel(); 
-    else if ((char)readval == 'c'  || (char)readval == 'C') pmbus_commands();
-    else if ((char)readval == 'e'  || (char)readval == 'E') readEeprom();   
+    else if ((char)readval == 'c'  || (char)readval == 'C') smbus_commands();
+    else if ((char)readval == 'e'  || (char)readval == 'E') setIntervaltime();   
     else if ((char)readval == 'r'  || (char)readval == 'R') reset_address();
     else if ((char)readval == 'h'  || (char)readval == 'H') {
       printhelp();
@@ -496,7 +488,7 @@ void serialread(){
     }
     else {
       Serial.println(F("unknown command"));
-      Serial.println(F("type \'h\' for help"));
+      Serial.println(F("type 'h' for help"));
       key = 0;       
     }
     Serial.printf("\nKey= %#01d:\n", key);
@@ -505,8 +497,7 @@ void serialread(){
 
 void pmbusdetects() {
   uint8_t i, address, error;
-  // table header
-  Serial.print("   ");
+  Serial.print("   ");                   // table header
   for (i = 8; i < 16; i++) {
     Serial.printf("%3x", i);
   }
@@ -515,21 +506,17 @@ void pmbusdetects() {
       Wire.beginTransmission(address);
       error = Wire.endTransmission();
     //  if (address == 92) error = 0;
-      if (error == 0) {
-        // device found
+      if (error == 0) {                  // device found        
         n++;
         if(n == 1) ps_i2c_address = address;
         else ps_i2c_address = PS_I2C_ADDRESS;
         if(n == 2) ps_patner_address = address;
         else ps_patner_address = PS_PARTNER_ADDRESS;
         Serial.printf(" %02x", address);       
-      } else if (error == 4) {
-        // other error
+      } else if (error == 4) {         // other error        
         Serial.print(" XX");
-      } else {
-        // error = 2: received NACK on transmit of address
-        // error = 3: received NACK on transmit of data
-        Serial.print(" --");
+      } else {                             // error = 2: received NACK on transmit of address        
+        Serial.print(" --");              // error = 3: received NACK on transmit of data
         delay(20);
       } 
   }
@@ -600,7 +587,7 @@ void ledflash(){
 
 void pecstatus(){
     pecflag = !pecflag;
-    if(pecflag) Serial.print(F("PEC ENABLE\n"));
+    if(pecflag) Serial.print(F("PEC Enable\n"));
     else Serial.print(F("PEC Disable\n"));
     delay(1000);
 }
@@ -657,7 +644,7 @@ void pmbus_devices_detect(){
  }
 
 void reset_address(){
-      Serial.printf("Current PSU Address is %#02X; Patner PSU Address is %#02X.\n", ps_i2c_address, ps_patner_address);
+      Serial.printf("Current PSU Address:%#02X; Patner PSU Address:%#02X.\n", ps_i2c_address, ps_patner_address);
       Serial.println(F("Input PSU address: (Can recognize Hex, Decimal, Octal, or Binary)"));
       Serial.println(F("Example: Hex: 0x11 (0x prefix) Octal: O21 (letter O prefix) Binary: B10001" ));
       ps_i2c_address = read_int();     
@@ -690,183 +677,273 @@ uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len)
      return (sum);
  }
  
-void pmbus_commands(){
+void setModel() {
+      Serial.printf("Current PSU Model is %#02X \n", unitname);
+      Serial.println(F("PSU Model Numbers: ()"));
+      Serial.println(F("0 - Standard " ));
+      Serial.println(F("1 - ADP1051 " ));
+      Serial.println(F("2 - Redundancy " ));
+      Serial.println(F("3 - Others " ));
+      Serial.println(F("Input New PSU Model:"));
+      unitname = read_int();     
+      Serial.printf("New PSU Model is: %02x \n", unitname);
+      delay(1000);
+}
+//
+//void readEeprom(){
+//      uint16_t offset;
+//      int count;
+//      int32_t serialread;
+//      Serial.printf("EEPORM ADDRESS %#02X \n", eeprom_address);
+//      Serial.println(F("Set EEPROM ADDRESS: (7 bit) such as:0x50 = 0xA0(8 bit)"));
+//      serialread = read_int();
+//      if(serialread) eeprom_address = (int)serialread;
+//      Serial.printf("NEW ADDRESS 0x%02X \n", eeprom_address);
+//      delay(100);
+//      Serial.println(F("Is the EEPROM Data Size Lower than 0x100; 1 Yes, 0 No" ));
+//      serialread = read_int();
+//      if(serialread == 1)  eepromsize = false;
+//      else eepromsize = true;
+//      Serial.printf("eepromsize = %01d \n", eepromsize);
+//      delay(100);
+//      Serial.println(F("Set the Read Start Address(offset < 0x10000):" ));
+//      offset = read_int();
+//      Serial.printf("offset= %02d \n", offset);
+//      delay(100);
+//      Serial.println(F("Set the Read count Data( Count <= 32 ):" ));
+//      count = read_int();
+//      Serial.printf("count= %02d \n", count);
+//      delay(100);
+//      eepromreadbytes(eeprom_address, offset, count, eepbuffer);
+//      printFru(0, count-1, eepbuffer); 
+//      delay(3000);
+//      while (!digitalRead(kButtonPin)) {};  // wait for button unpress
+//}
+
+uint8_t smbus_sent(){
+  uint8_t count;
+  bool martflag = false;
+  Serial.println(F(" " ));
+  read_data();
+  if (ui_buffer[0] == 'm') return('m');
+  if (ui_buffer[0] != '['){
+    Serial.println(F("Smbus Invaild format" ));
+    delay(100);
+    return 0xff;
+  }
+  smbus_data[0] = tohex(ui_buffer[1])*16 + tohex(ui_buffer[2]);
+//  Serial.printf("Data[0] is: %02x \n", data[0]);
+//  delay(100);
+  for(int i = 0; i < 32; i++){
+    if (ui_buffer[3*i+3] == ']') break;
+    smbus_data[i+1] = tohex(ui_buffer[3*i+4])*16 + tohex(ui_buffer[3*i+5]);
+    count = i + 2;
+    if (i == 31) {
+      Serial.println(F("Smbus Invalid format" ));
+      martflag = true;
+      delay(100);
+      break; 
+    }
+  }
+  if (martflag) return 0xff;
+  Serial.print(F("[" ));
+  Serial.printf("%02x", smbus_data[0]);
+  for(int i = 1; i < count; i++){
+    Serial.printf(" %02x", smbus_data[i]);
+  }
+  Serial.println(F("]" ));
+  if (smbus_data[0] >= 0 && smbus_data[0] <=9) return smbus_data[0];
+  return 0;
+}
+
+uint8_t tohex(uint8_t val){
+  uint8_t hex;
+  if ( val - '0' >= 0 && val - '0' <=9){
+     hex = val - '0';
+  }
+  else if( val == 'a' || val == 'A') hex = 10;
+  else if( val == 'b' || val == 'B') hex = 11;
+  else if( val == 'c' || val == 'C') hex = 12;
+  else if( val == 'd' || val == 'D') hex = 13;
+  else if( val == 'e' || val == 'E') hex = 14;
+  else if( val == 'f' || val == 'F') hex = 15;
+//  else if( val == 'm' || val == 'M') return('m');
+  else {
+    Serial.println(F("Invalid Hex Data" ));
+    delay(100);
+    return 0;
+  }
+  return hex;
+}
+
+void smbus_commands(){
       uint8_t user_command;
-      uint8_t size_n;
-      uint8_t lsb;
-      struct pmbusCommand
+//      uint8_t size_n;
+//      uint8_t lsb;
+      uint16_t offset;
+      int count;
+      struct smbusCommand
         {      
-            uint8_t command;
+            uint8_t commands;
             uint8_t databyte;
             uint16_t dataword;
             uint8_t datablock[32];
             uint16_t blocksize;
             uint8_t datablock_b[32];
-            uint16_t blocksize_b;
-              
-        }pm;
-  Serial.println(F("Input Value Can recognize Hex, Decimal, Octal, or Binary"));
-  Serial.println(F("Example: Hex:0x11(0x prefix) Octal:O21(O prefix) Binary:B10001"));
-  Serial.printf("PSU Address is:%#02X\n",  pd.i2cAddr);
-  Serial.println(F(" "));             
+            uint16_t blocksize_b;              
+        }sm;
+  Serial.println(F("Input Smbus Commands: (Hex Data Format)"));
+  Serial.println(F("Example: [03 58 00 01] MSB:03(Smbus Command Protocol) Wirte Byte"));
+  Serial.println(F("Smbus Command Protocol (0 to 7) Info:"));
+  Serial.print(F("  0-Read Byte (RB)\n"));
+  Serial.print(F("  1-Read Word (RW)\n"));
+  Serial.print(F("  2-Read Block (RBL)\n"));
+  Serial.print(F("  3-Write Byte (WB)\n"));
+  Serial.print(F("  4-Write Word (WW)\n"));
+  Serial.print(F("  5-Write Block (WBL)\n"));
+  Serial.print(F("  6-Write Read Block (WRB)\n"));
+  Serial.print(F("  7-Sent Byte (SBY)\n"));
+  Serial.print(F("  8-EEPROM Read Byte (ER)\n"));
+  Serial.print(F("  9-EEPROM Read Bytes (ERS)\n"));
+  Serial.println(F("[03 58 00 01]: 58 Address; 00 Command Code; 01 Data Byte;"));
+  Serial.println(F("Send (03)writeByte: smbus_writeByte(0x58, 0x00, 0x01)."));
+//  Serial.println(F(" "));
+  delay(100);             
   do{  
-    Serial.print(F("  1-Sent Byte \n"));
-    Serial.print(F("  2-Read Byte \n"));
-    Serial.print(F("  3-Read Word \n"));
-    Serial.print(F("  4-Read Block \n"));
-    Serial.print(F("  5-Write Byte \n"));
-    Serial.print(F("  6-Write Word \n"));
-    Serial.print(F("  7-Write Block \n"));
-    Serial.print(F("  8-Write Read Block \n"));
-    Serial.print(F("  9-Set Pmbus address \n"));
-    Serial.print(F("  m-Main Menu\n"));
-    Serial.print(F("\nEnter a command: "));  
-    user_command = read_int();                              //! Reads the user command
-    if (user_command == 'm')   Serial.print(F("m\n"));     // Print m if it is entered
-    else  Serial.println(user_command);                    // Print user command 
-        
+      Serial.print(F("\n0-RB; 1-RW; 2-RBL; 3-WB; 4-WW; 5-WBL;\n"));
+      Serial.print(F("6-WRB; 7-SByte; 8-ER; 9-ERS\n"));
+      Serial.print(F("Enter Smbus Protoccol: [xx xx xx xx xx] or Command:'m' to Main Menu\n"));  
+      user_command = smbus_sent();                              //! Reads the user command
+      if (user_command == 'm')   Serial.print(F("m\n"));        // Print m if it is entered
+//      else  Serial.println(user_command);                       // Print user command         
     switch (user_command)
     {
+      case 0:
+        Serial.println(F("Smbus Read Byte:"));
+        delay(100);
+        ps_i2c_address = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.databyte = smbus_readByte(ps_i2c_address, sm.commands);
+        Serial.printf("%02X: [%02X]\n", sm.commands, sm.databyte);
+        delay(1000);       
+      break;
+      
       case 1:
-      Serial.println(F("Input the Pmbus Sent Byte Command: "));
-      pm.command = read_int();
-      Serial.printf("Command: %02X \n", pm.command);
-      smbus_sendByte(pd.i2cAddr, pm.command);
-      Serial.printf(" %02X\n %02X\n", pd.i2cAddr, pm.command);
-      delay(1000);       
-        break;
+        Serial.println(F("Smbus Read Word:"));
+        delay(100);
+        ps_i2c_address = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.dataword = smbus_readWord(ps_i2c_address, sm.commands);
+        Serial.printf("%02X: [%02X %02X]\n", sm.commands, sm.dataword >> 8, (uint8_t)sm.dataword);
+        delay(1000);
+      break;
         
       case 2:
-      Serial.println(F("Input the Pmbus Read Byte Command: "));
-      pm.command = read_int();
-      Serial.printf("Command: %02X \n", pm.command);
-      pm.databyte = smbus_readByte(pd.i2cAddr, pm.command);
-      Serial.printf(" %02X\n %02X\n %02X\n", pd.i2cAddr, pm.command, pm.databyte);
-      delay(1000);       
-      break;
-      
-      case 3:
-      Serial.println(F("Input the Pmbus Read Word Command: "));
-      pm.command = read_int();
-      Serial.printf("Command: %02X \n", pm.command);
-      delay(100);
-      pm.dataword = smbus_readWord(pd.i2cAddr, pm.command);
-      Serial.printf(" %02X\n %02X\n %02X\n %02X\n", pd.i2cAddr, pm.command, pm.dataword >> 8, (uint8_t)pm.dataword);
-      delay(1000);
-        break;
-        
-      case 4:
-      Serial.println(F("Input the Pmbus Read Block Command: "));
-      pm.command = read_int();
-      Serial.printf("Command: %02X \n", pm.command);
-      Serial.println(F("Input the Pmbus Read Block Size: "));
-      pm.blocksize = read_int();
-      Serial.printf("Block Size: %02X \n", pm.blocksize);
-      delay(100);
-      size_n = smbus_readBlock(pd.i2cAddr, pm.command, pm.datablock, pm.blocksize);
-      Serial.printf(" %02X\n %02X\n", pd.i2cAddr, pm.command);
-      for (int n = 0; n < size_n; n++){
-        Serial.printf(" %02X\n", pm.datablock[n]);
+        Serial.println(F("Smbus Read Block:"));
         delay(100);
-      }
-      delay(1000);
+        ps_i2c_address = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.blocksize = smbus_data[3]; //Max size 32 block
+        smbus_readBlock(ps_i2c_address, sm.commands, sm.datablock, sm.blocksize);
+        Serial.printf(" %02X:", sm.commands);
+        for (int n = 0; n < sm.blocksize; n++){
+          Serial.printf(" %02X", sm.datablock[n]);
+          delay(100);
+        }
+        Serial.println(F(" "));
+        delay(1000);
       break;
             
+      case 3:
+        Serial.println(F("Smbus Write Byte:"));
+        delay(100);
+        ps_i2c_address = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.databyte = smbus_data[3];
+        smbus_writeByte(ps_i2c_address, sm.commands, sm.databyte);
+        Serial.println(F("Done."));
+        delay(1000); 
+        break;
+                
+      case 4:
+        Serial.println(F("Smbus Write Word:"));
+        delay(100);
+        ps_i2c_address = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.dataword = smbus_data[3] << 8 | smbus_data[4];
+        smbus_writeWord(ps_i2c_address, sm.commands, sm.dataword);
+        Serial.println(F("Done."));
+        delay(1000);
+        break;
+                
       case 5:
-      Serial.println(F("Input the Pmbus Write Byte Command: "));
-      pm.command = read_int();
-      Serial.printf("Command: %02X \n", pm.command);
-      Serial.println(F("Input the Pmbus Write Byte Data: "));
-      pm.databyte = read_int();
-      Serial.printf("Write Byte data: %02X\n", pm.databyte);
-      delay(100);
-      smbus_writeByte(pd.i2cAddr, pm.command, pm.databyte);
-      Serial.printf(" %02X\n %02X\n %02X\n", pd.i2cAddr, pm.command, pm.databyte);
-      delay(1000); 
-        break;
-                
-      case 6:
-      Serial.println(F("Input the Pmbus Write Word Command: "));
-      pm.command = read_int();
-      Serial.printf("Command: %02X \n", pm.command);
-      Serial.println(F("Input the Pmbus Write Word Msb_Data: "));
-      pm.dataword = read_int();
-      pm.dataword = pm.dataword << 8;
-      Serial.printf("Word Msb_Data: %04X \n", pm.dataword);
-      Serial.println(F("Input the Pmbus Write Word Lsb_Data: "));
-      lsb = read_int();
-      pm.dataword = pm.dataword | lsb;
-      Serial.printf("Word Data: %04X \n", pm.dataword);
-      delay(100);
-      smbus_writeWord(pd.i2cAddr, pm.command, pm.dataword);
-      Serial.printf(" %02X\n %02X\n %02X\n %02X\n", pd.i2cAddr, pm.command, pm.dataword >>8, (uint8_t)pm.dataword);
-      delay(1000);
-        break;
-                
-      case 7:
-      Serial.println(F("Input the Pmbus Write Block Command: "));
-      pm.command = read_int();
-      Serial.printf("Command: %02X \n", pm.command);
-      Serial.println(F("Input the Pmbus Write Block Size: "));
-      pm.blocksize = read_int();
-      Serial.printf("Block Size: %02X \n", pm.blocksize);
-      delay(100);
-      for(int i = 0; i < pm.blocksize; i++) {
-        Serial.printf("Input n=%02X Block Data\n", i);
-        pm.datablock[i] = read_int();
-        Serial.printf("Block n=%02X Data:%02X\n", i, pm.datablock[i]);
-        delay(100);     
-      }
-      smbus_writeBlock(pd.i2cAddr, pm.command, pm.datablock, pm.blocksize);
-      Serial.printf(" %02X\n %02X\n %0X02\n", pd.i2cAddr, pm.command, pm.blocksize);
-      for (int k = 0; k < pm.blocksize; k++){
-        Serial.printf(" %02X\n", pm.datablock[k]);
+        Serial.println(F("Smbus Write Block:"));
         delay(100);
-      }
-      delay(1000);     
+          ps_i2c_address = smbus_data[1];
+          sm.commands = smbus_data[2];
+          sm.blocksize = smbus_data[3];   // size Max 256 
+          for(int i = 0; i < sm.blocksize; i++) {
+            sm.datablock[i] = smbus_data[4+i];;
+            Serial.printf("Block n=%02X Data:%02X\n", i, sm.datablock[i]);
+            delay(100);     
+          }
+          smbus_writeBlock(ps_i2c_address, sm.commands, sm.datablock, sm.blocksize);
+          Serial.println(F("Done."));
+          delay(1000);     
         break;
       
-       case 8:
-      Serial.println(F("Input the Pmbus Write Read Blocks Command: "));
-      pm.command = read_int();
-      Serial.printf("Command: %02X \n", pm.command);
-      Serial.println(F("Input the Pmbus Write Block Size: "));
-      pm.blocksize = read_int();
-      Serial.printf("Write Block Size: %02X \n", pm.blocksize);
-      delay(100);
-      for(int i = 0; i < pm.blocksize; i++) {
-        Serial.printf("Input n=%02X Write Block Data\n", i);
-        pm.datablock[i] = read_int();
-        Serial.printf("Block n=%02X Data:%02X\n", i, pm.datablock[i]);
-        delay(100);     
-      }
-      Serial.println(F("Input the Pmbus Read Block Size: "));
-      pm.blocksize_b = read_int();
-      Serial.printf("Read Block Size: %02X \n", pm.blocksize_b);
-      delay(100);
-       
-      size_n = smbus_writeReadBlock (pd.i2cAddr, pm.command, pm.datablock, pm.blocksize, pm.datablock_b, pm.blocksize_b);
-      
-      Serial.printf(" %02X\n %02X\n", pd.i2cAddr, pm.command);          
-      for (int k = 0; k < pm.blocksize; k++){
-        Serial.printf(" %02X", pm.datablock[k]);
+       case 6:
+        Serial.println(F("Smbus Write Read Blocks:"));
         delay(100);
-      }
-      Serial.println(F(" "));
-      
-      for (int n = 0; n < size_n; n++){
-        Serial.printf(" %02X", pm.datablock_b[n]);
-        delay(100);
-      }
-      Serial.println(F(" "));
-      delay(1000);     
+        ps_i2c_address = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.blocksize = smbus_data[3];
+        for(int i = 0; i < sm.blocksize; i++) {
+          sm.datablock[i] = smbus_data[i+4];
+//          Serial.printf("Block n=%02X Data:%02X\n", i, sm.datablock[i]);
+//          delay(100);     
+        }
+        sm.blocksize_b = smbus_data[sm.blocksize+4];
+//        Serial.printf("Read Block Size: %02X \n", sm.blocksize_b);
+//        delay(100);       
+        smbus_writeReadBlock (ps_i2c_address, sm.commands, sm.datablock, sm.blocksize, sm.datablock_b, sm.blocksize_b);      
+        Serial.printf("%02X:", sm.blocksize_b);              
+        for (int n = 0; n < sm.blocksize_b; n++){
+          Serial.printf(" %02X", sm.datablock_b[n]);
+          delay(100);
+        }
+        Serial.println(F(" "));
+        delay(1000);     
         break;
-                
+
+       case 7:
+        Serial.println(F("Smbus Sent Byte:"));
+        delay(100);
+        ps_i2c_address = smbus_data[1];
+        sm.commands = smbus_data[2];
+        smbus_sendByte(ps_i2c_address, sm.commands);
+        Serial.println(F("Done."));
+        delay(1000);       
+          break;
+         
+      case 8:
+        Serial.println(F("EEPROM Read Byte"));
+        eeprom_address = smbus_data[1];
+        offset = smbus_data[2] << 8 | smbus_data[3];
+        eepbuffer[0] = eepromreadbyte(eeprom_address, offset);
+        Serial.printf("offset0x%04X: %02X\n", offset, eepbuffer[0]);
+        delay(1000);
+        break;
+      
       case 9:
-      Serial.println(F("Input the Pmbus address "));
-      pd.i2cAddr = read_int();     
-      Serial.printf("Address Set:%02X\n", pd.i2cAddr);
-      delay(1000);
+        Serial.println(F("EEPROM Read Bytes"));
+        eeprom_address = smbus_data[1];
+        offset = smbus_data[2] << 8 | smbus_data[3];
+        count = smbus_data[4];
+        eepromreadbytes(eeprom_address, offset, count, eepbuffer);
+        Serial.printf("offset0x%04X:\n", offset);
+        printFru(0, count-1, eepbuffer); 
+        delay(1000);
         break;
                 
       default:
@@ -878,45 +955,10 @@ void pmbus_commands(){
   while (user_command != 'm');
 }
 
-void setModel() {
-      Serial.printf("Current PSU Model is %#02X \n", unitname);
-      Serial.println(F("PSU Model Numbers: ()"));
-      Serial.println(F("0 - is default model" ));
-      Serial.println(F("1 - is ADP1051" ));
-      Serial.println(F("2 - is CRPS" ));
-      Serial.println(F("3 - is Others" ));
-      Serial.println(F("Input New PSU Model:"));
-      unitname = read_int();     
-      Serial.printf("New PSU Model is: %02x \n", unitname);
+void setIntervaltime() {
+      Serial.printf("Current Interval Time(ms):%d\n", pmInterval);
+      Serial.println(F("Input New Interval Time(ms) < 60S :"));
+      pmInterval = read_int();     
+      Serial.printf("New Interval Time(ms):%d\n", pmInterval);
       delay(1000);
-}
-
-void readEeprom(){
-      uint16_t offset;
-      int count;
-      int32_t serialread;
-      Serial.printf("EEPORM ADDRESS %#02X \n", eeprom_address);
-      Serial.println(F("Set EEPROM ADDRESS: (7 bit) such as:0x50 = 0xA0(8 bit)"));
-      serialread = read_int();
-      if(serialread) eeprom_address = (int)serialread;
-      Serial.printf("NEW ADDRESS 0x%02X \n", eeprom_address);
-      delay(100);
-      Serial.println(F("Is the EEPROM Data Size Lower than 0x100; 1 Yes, 0 No" ));
-      serialread = read_int();
-      if(serialread == 1)  eepromsize = false;
-      else eepromsize = true;
-      Serial.printf("eepromsize = %01d \n", eepromsize);
-      delay(100);
-      Serial.println(F("Set the Read Start Address(offset < 0x10000):" ));
-      offset = read_int();
-      Serial.printf("offset= %02d \n", offset);
-      delay(100);
-      Serial.println(F("Set the Read count Data( Count <= 32 ):" ));
-      count = read_int();
-      Serial.printf("count= %02d \n", count);
-      delay(100);
-      eepromreadbytes(eeprom_address, offset, count, eepbuffer);
-      printFru(0, count-1, eepbuffer); 
-      delay(3000);
-      while (!digitalRead(kButtonPin)) {};  // wait for button unpress
 }
