@@ -109,6 +109,54 @@ uint16_t smbus_readWord(uint8_t address, uint8_t command){
   }
 }
 
+uint32_t smbus_read32(uint8_t address, uint8_t command)
+{
+  uint8_t input[5];
+    input[0] = 0x00;
+    input[1] = 0x00;
+    input[2] = 0x00;
+    input[3] = 0x00;
+    input[4] = 0x00;
+     union
+  {
+    uint32_t value;
+    uint8_t b[4];
+  }data;
+  
+  if (pecflag)
+  {
+    pecClear();
+    pecAdd(address << 1);
+    pecAdd(command);
+    pecAdd((address << 1) | 0x01);
+    if (i2c_readBlockData(address, command, 5, input))
+      Serial.print(F("Read Word With Pec: fail.\n"));
+    pecAdd(input[0]);
+    pecAdd(input[1]);
+    pecAdd(input[2]);
+    pecAdd(input[3]);
+    if (pecGet() != input[4])
+      Serial.print(F("Read Word With Pec: fail pec\n"));
+    data.b[0] = input[0];
+    data.b[1] = input[1];
+    data.b[2] = input[2];
+    data.b[3] = input[3];    
+    return data.value;
+  }
+  
+  else
+  {
+    uint16_t rdata;
+    if (i2c_readBlockData(address, command, 4, input))
+      Serial.print(F("Read Word: fail.\n"));
+    data.b[0] = input[0];
+    data.b[1] = input[1];
+    data.b[2] = input[2];
+    data.b[3] = input[3];
+    return data.value;
+  }
+}
+
 void smbus_writeByte(uint8_t address, uint8_t command, uint8_t data)
 {
   if (pecflag)
@@ -187,6 +235,39 @@ void smbus_writeWord(uint8_t address, uint8_t command, uint16_t data)
     uint16_t rdata;
     rdata = (data << 8) | (data >> 8);
     if (i2c_writeWordData(address, command, rdata))
+      Serial.print(F("Write Word: fail.\n"));
+  }
+}
+
+void smbus_write32(uint8_t address, uint8_t command, uint32_t data)
+{
+  uint8_t buffer[5];
+  union
+    {
+      uint32_t value;
+      uint8_t b[4];
+    }da;
+    da.value = data;
+    buffer[0] = da.b[0];
+    buffer[1] = da.b[1];
+    buffer[2] = da.b[2];
+    buffer[3] = da.b[3];
+  if (pecflag)
+  {    
+    pecClear();
+    pecAdd(address << 1);
+    pecAdd(command);
+    pecAdd(da.b[0]);
+    pecAdd(da.b[1]);
+    pecAdd(da.b[2]);
+    pecAdd(da.b[3]);
+    buffer[4] = pecGet();
+    if (i2c_writeBlockData(address, command, 5, buffer))
+      Serial.print(F("Write Word With Pec: fail.\n"));
+  }
+  else
+  {
+    if (i2c_writeBlockData(address, command, 4, buffer))
       Serial.print(F("Write Word: fail.\n"));
   }
 }
