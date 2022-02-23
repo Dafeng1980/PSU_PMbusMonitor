@@ -70,11 +70,7 @@ void setup()
   digitalWrite(kLedPin, LOW); 
   Serial.begin(38400);    //! Initialize the serial port to the PC 38400
   Wire.begin();
-<<<<<<< HEAD
 //  Wire.setClock(50000);    // Set the I2C clock, default(100kHz);   
-=======
-  //Wire.setClock(50000);    // Set the I2C clock, default(100kHz);   
->>>>>>> 511d24b30ee0a5c5ac55d384e52e6701c8084ae5
   ps_i2c_address = PS_I2C_ADDRESS;
   ps_patner_address = PS_PARTNER_ADDRESS;
   pecflag = PEC_ENABLE;      
@@ -87,41 +83,7 @@ void setup()
 
 void loop()
 {  
-<<<<<<< HEAD
   checkSerial();
   readSensors();   
   checkButton();
-=======
-  serialread();
-  unsigned long currentMillis = millis();
-  if (currentMillis - previousMillis >= pmInterval){
-        previousMillis = currentMillis;
-        if(scani2c) i2cdetects(0x00, 0x7F);
-        if(readpmbusdata()){
-            if(0 != pd.statusWord && statusflag) pmbusStatus();      
-            if(0 == count%5) printpmbusData(pd);
-            if(key == 1){
-                monitorstatus();
-                key = 0;
-            }
-            else if(key == 2){
-                standbystatus();
-                key = 0;
-            }
-            else if(key == 3){
-               Serial.println(F("TBD "));
-               delay(100);
-               key = 0;
-            }
-            else if(key == 4){
-               Serial.println(F("TBD "));
-               delay(100);
-               key = 0;                
-              }       
-          }
-          count++;
-          buttonflag = true;                     
-        }    
-     checkButton();
->>>>>>> 511d24b30ee0a5c5ac55d384e52e6701c8084ae5
 }
