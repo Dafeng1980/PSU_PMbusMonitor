@@ -29,25 +29,49 @@ uint8_t pecGet(void)
 {
   return runningpec;
 }
-
-
+//
+//uint8_t smbus_waitForAck(uint8_t address, uint8_t command) //! Read with the address and command in loop until ack, 
+//{                                                          //  then issue stop 
+//  uint8_t data;
+//  uint8_t  error;
+//       Wire.beginTransmission(address);
+//       error = Wire.endTransmission();
+//       delay(1);
+//  if (error != 0) {
+//    Serial.print(F("No PMbus device\n"));
+//    delay(20);
+//    return 0;    
+//  }
+// // A real application should timeout at 4.1 seconds.
+// // uint16_t timeout = 8192;
+////  uint16_t timeout = 20;
+////  while (timeout-- > 0)
+////  {
+////    delay(1);
+////    if (0 == i2c_readByteData(address, command, &data))
+////    return 1;    //SUCCESS
+////  }
+//  return 0;    //FAILURE
+//}
+////
 uint8_t smbus_waitForAck(uint8_t address, uint8_t command) //! Read with the address and command in loop until ack, 
 {                                                          //  then issue stop 
   uint8_t data;
   // A real application should timeout at 4.1 seconds.
  // uint16_t timeout = 8192;
-  uint16_t timeout = 32;
+  uint16_t timeout = 20;
   while (timeout-- > 0)
-  {
+  {   
     if (0 == i2c_readByteData(address, command, &data))
-      return 1;    //SUCCESS
+    return 1;    //SUCCESS
+    delay(1);
   }
   return 0;    //FAILURE
 }
 
 uint8_t smbus_readByte(uint8_t address, uint8_t command)
 {
-  if (PECENABLE)
+  if (pecflag)
   {
     uint8_t input[2];
     input[0] = 0x00;
@@ -77,7 +101,7 @@ uint8_t smbus_readByte(uint8_t address, uint8_t command)
 }
 
 uint16_t smbus_readWord(uint8_t address, uint8_t command){
-  if (PECENABLE)
+  if (pecflag)
   {
     uint8_t input[3];
     input[0] = 0x00;
@@ -111,7 +135,7 @@ uint16_t smbus_readWord(uint8_t address, uint8_t command){
 
 void smbus_writeByte(uint8_t address, uint8_t command, uint8_t data)
 {
-  if (PECENABLE)
+  if (pecflag)
   {
     uint8_t buffer[2];
     buffer[0] = data;
@@ -133,7 +157,7 @@ void smbus_writeByte(uint8_t address, uint8_t command, uint8_t data)
 
 void smbus_writeBytes(uint8_t *addresses, uint8_t *commands, uint8_t *data, uint8_t no_addresses)
 {
-  if (PECENABLE)
+  if (pecflag)
   {
     uint8_t buffer[2];
     uint16_t index = 0;
@@ -167,7 +191,7 @@ void smbus_writeBytes(uint8_t *addresses, uint8_t *commands, uint8_t *data, uint
 
 void smbus_writeWord(uint8_t address, uint8_t command, uint16_t data)
 {
-  if (PECENABLE)
+  if (pecflag)
   {
     uint8_t buffer[3];
     buffer[0] = (uint8_t) (data & 0xff);
@@ -193,7 +217,7 @@ void smbus_writeWord(uint8_t address, uint8_t command, uint16_t data)
 
 void smbus_writeBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t block_size)
 {
-  if (PECENABLE)
+  if (pecflag)
   {
     uint16_t pos = 0;
 
@@ -228,7 +252,7 @@ void smbus_writeBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t
 
 uint8_t smbus_readBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t block_size)
 {
-  if (PECENABLE)
+  if (pecflag)
   {
     uint16_t pos;
     uint8_t *buffer = (uint8_t *)malloc(block_size + 2);
@@ -277,7 +301,7 @@ uint8_t smbus_readBlock(uint8_t address, uint8_t command, uint8_t *block, uint16
 
 uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_out, uint16_t block_out_size, uint8_t *block_in, uint16_t block_in_size)
 {
-  if (PECENABLE)
+  if (pecflag)
   {
     uint16_t pos = 0;
     uint8_t actual_block_size;
@@ -351,7 +375,7 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_ou
 
 void smbus_sendByte(uint8_t address, uint8_t command)
 {
-  if (PECENABLE)
+  if (pecflag)
   {
     uint8_t pec;
 

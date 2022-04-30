@@ -78,7 +78,7 @@ void pmbus_clearFaults(uint8_t address)
 
 void pmbus_writeProtect(uint8_t address, uint8_t val)  // val = 0x00 to disable Write-Protect, 0x80 enablle.
 {
-  smbus_writeByte(address, 0x10, val);  //WRITE_PROTECT 0x10;
+  smbus_writeByte(address, 0x10, val);  //WRITE_PROTECT CMD 0x10;
 }
 
 float pmbus_readVout(uint8_t address)
@@ -153,6 +153,13 @@ float pmbus_readFanSpeed1(uint8_t address)  //Fan speed1
 {
   uint16_t temp_L11;
   temp_L11 = smbus_readWord(address, 0x90);
+  return L11_to_float(temp_L11);
+}
+
+float pmbus_readFanSpeed2(uint8_t address)  //Fan speed2
+{
+  uint16_t temp_L11;
+  temp_L11 = smbus_readWord(address, 0x91);
   return L11_to_float(temp_L11);
 }
 

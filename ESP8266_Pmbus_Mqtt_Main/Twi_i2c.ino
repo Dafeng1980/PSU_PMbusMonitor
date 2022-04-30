@@ -2,7 +2,7 @@
 /*
  * #include <Wire.h>
  * Modify "Wire.h", Wire.cpp", added the Wire.requestFromS to Support SMbus Wire.requestFrom.
- * in folder %USERPROFILE%\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\2.7.4\libraries\
+ * in folder %USERPROFILE%\AppData\Local\Arduino15\packages\esp8266\hardware\esp8266\3.0.2\libraries\
  * 
  */
 uint8_t i2c_requestFrom(uint8_t address, uint8_t *acceptBuffer, uint16_t quantity)
@@ -162,6 +162,7 @@ uint8_t eepromreadbyte(int address, uint16_t offset)
 {
   uint8_t data;
   Wire.beginTransmission(address);
+  if(eepromsize)
   Wire.write((int)(offset >> 8));
   Wire.write((int)(offset & 0xFF));
   Wire.endTransmission(I2C_NOSTOP);
@@ -173,6 +174,7 @@ uint8_t eepromreadbyte(int address, uint16_t offset)
 void eepromreadbytes(int address, uint16_t offset, int count, uint8_t * dest)
 {
   Wire.beginTransmission(address);
+  if(eepromsize)
   Wire.write((int)(offset >> 8));
   Wire.write((int)(offset & 0xFF));
   Wire.endTransmission(I2C_NOSTOP);
@@ -191,6 +193,8 @@ uint8_t read_data()
   int c; // single character used to store incoming keystrokes
   while (index < UI_BUFFER_SIZE-1)
   {
+    ESP.wdtFeed();      // wdtFeed or delay can solve the ESP8266 SW wdt reset while is waiting for serial data
+//    delay(1);
     c = Serial.read(); //read one character
     if (((char) c == '\r') || ((char) c == '\n')) break; // if carriage return or linefeed, stop and return data
     if ( ((char) c == '\x7F') || ((char) c == '\x08') )   // remove previous character (decrement index) if Backspace/Delete key pressed      index--;
@@ -231,6 +235,7 @@ int32_t read_int()
 int8_t read_char()
 {
   read_data();
+//  delay(1);
   return(ui_buffer[0]);
 }
 
