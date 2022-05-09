@@ -29,45 +29,22 @@ uint8_t pecGet(void)
 {
   return runningpec;
 }
-//
-//uint8_t smbus_waitForAck(uint8_t address, uint8_t command) //! Read with the address and command in loop until ack, 
-//{                                                          //  then issue stop 
-//  uint8_t data;
-//  uint8_t  error;
-//       Wire.beginTransmission(address);
-//       error = Wire.endTransmission();
-//       delay(1);
-//  if (error != 0) {
-//    Serial.print(F("No PMbus device\n"));
-//    delay(20);
-//    return 0;    
-//  }
-// // A real application should timeout at 4.1 seconds.
-// // uint16_t timeout = 8192;
-////  uint16_t timeout = 20;
-////  while (timeout-- > 0)
-////  {
-////    delay(1);
-////    if (0 == i2c_readByteData(address, command, &data))
-////    return 1;    //SUCCESS
-////  }
-//  return 0;    //FAILURE
-//}
-////
-uint8_t smbus_waitForAck(uint8_t address, uint8_t command) //! Read with the address and command in loop until ack, 
-{                                                          //  then issue stop 
+
+uint8_t smbus_waitForAck(uint8_t address, uint8_t command)  //! Read with the address and command in loop until ack, 
+{                                                           //  then issue stop 
   uint8_t data;
   // A real application should timeout at 4.1 seconds.
  // uint16_t timeout = 8192;
-  uint16_t timeout = 20;
+  uint16_t timeout = 16;
   while (timeout-- > 0)
-  {   
+  {
+    delay(1);
     if (0 == i2c_readByteData(address, command, &data))
     return 1;    //SUCCESS
-    delay(1);
   }
   return 0;    //FAILURE
 }
+
 
 uint8_t smbus_readByte(uint8_t address, uint8_t command)
 {

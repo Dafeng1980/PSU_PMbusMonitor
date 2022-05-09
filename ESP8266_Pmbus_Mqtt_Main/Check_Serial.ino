@@ -1,4 +1,3 @@
-
 void checkSerial(){
   char readval;
   if (Serial.available())                //! Serial input read
@@ -15,7 +14,7 @@ void checkSerial(){
     else if ((char)readval == '8') mfr_menu_commands();
     else if ((char)readval == '9') pecstatus();
     else if ((char)readval == 'a'  || (char)readval == 'A') setModel(); 
-    else if ((char)readval == 'c'  || (char)readval == 'C') smbus_commands();
+    else if ((char)readval == 'c'  || (char)readval == 'C') serial_smbus_commands();
     else if ((char)readval == 'e'  || (char)readval == 'E') setIntervaltime();   
     else if ((char)readval == 'r'  || (char)readval == 'R') reset_address();
     else if ((char)readval == 'h'  || (char)readval == 'H') {
@@ -27,13 +26,71 @@ void checkSerial(){
         };  
     }
     else {
-      Serial.println("unknown command");
+      Serial.print(readval);
+      Serial.println("  unknown command");
       Serial.println("type \'h\' for help");
       key = 0;       
     }
     Serial.printf("\n Key = %#01d:\n", key);
- }
+    buttonflag = true;
+    delay(100);
+  }
 }
+
+//void serial_menu_commands(){
+//  uint8_t user_command;       
+//  do{  
+//    Serial.print(F("  1-Pmbus status monitor \n"));
+//    Serial.print(F("  2-Standby info \n"));
+//    Serial.print(F("  3-Smbus Command \n"));
+//    Serial.print(F("  4-Set Mode \n"));
+//    Serial.print(F("  5-I2c scan \n"));
+//    Serial.print(F("  6-Set Device Address \n"));
+//    Serial.print(F("  7-set interval time \n"));
+//    Serial.print(F("  8-mfr_menu_commands \n"));
+//    Serial.print(F("  9-PEC ON/OFF \n"));
+//    Serial.print(F("  m-Main Menu \n"));
+//    Serial.print(F("\nEnter a command: "));  
+//    user_command = read_int();                              //! Reads the user command
+//    if (user_command == 'm')   Serial.print(F("m\n"));     // Print m if it is entered
+//    else  Serial.println(user_command);                    // Print user command     
+//    switch (user_command)
+//    {
+//      case 1:
+//      monitorstatus();
+//      user_command = 'm';
+//        break;
+//      case 2:
+//      standbystatus();
+//        break;
+//      case 3:
+//      smbus_commands();
+//        break;
+//      case 4:
+//      setModel();    
+//        break;
+//      case 5:
+//      i2cdetectsstatus();
+//      break;      
+//      case 6:
+//      reset_address();
+//        break;        
+//      case 7:
+//      setIntervaltime();     
+//        break;        
+//      case 8:
+//        break;        
+//      case 9:
+//      pecstatus();
+//        break;        
+//      default:
+//        if (user_command != 'm')
+//          Serial.println(F("Invalid Selection"));
+//        break;
+//    }
+//  }
+//  while (user_command != 'm'); 
+//}
 
 void mfr_menu_commands(){
         uint8_t user_command;       
@@ -55,7 +112,7 @@ void mfr_menu_commands(){
     switch (user_command)
     {
       case 1:
-//      getRevision();
+      serial_smbus_commands();
       Serial.println(F(" "));
         break;
       case 2:
@@ -114,33 +171,6 @@ void mfr_menu_commands(){
   while (user_command != 'm');
 }
 
-//bool readpmbusdata()
-//{   
-//    bool ret = true;
-//  if(!pmbusflag) return ret = false;
-//  if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {  //0x00 PAGE read
-//      Serial.println("PMBUS Polling Fail \n");      
-//      if(wifistatus && mqttflag){
-//        if(count%6 == 0){
-//            ++value;     
-//            snprintf (msg, MSG_BUFFER_SIZE, "PMBUS Polling Fail  Loop#%ld", value);
-//            client.publish("rrh/pmbus/status", msg);
-//        }
-//      }
-//      return ret = false;
-//    }
-//     pd.statusWord = pmbus_readStatusWord(ps_i2c_address); 
-//     pd.inputV = pmbus_readVin(ps_i2c_address);     
-//     pd.inputA = pmbus_readIin(ps_i2c_address);
-//     pd.inputP = pmbus_readPin(ps_i2c_address);      
-//     pd.outputV = pmbus_readVout(ps_i2c_address);
-//     pd.outputA = pmbus_readIout(ps_i2c_address);    
-//     pd.outputP = pmbus_readPout(ps_i2c_address);
-//     pd.temp1 = pmbus_readOtemp(ps_i2c_address);           //temp sensor 0x8D  
-//     pd.i2cAddr = ps_i2c_address;
-//     return ret;  
-//}
-
 void printhelp(){
       Serial.print(F("\n Here are commands can be used.\r\n "));
       Serial.print(F(" 1 > Moitor the PSU Status Word \r\n "));
@@ -162,12 +192,6 @@ void printhelp(){
       Serial.print("Enter a command: ");      
       delay(500);  
 }
-
-//void ledflash(){
-//  ledstatus = !ledstatus;
-//  if(ledstatus) digitalWrite(kLedPin, HIGH);
-//  else digitalWrite(kLedPin, LOW);
-//}
 
 void pecstatus(){
     pecflag = !pecflag;
@@ -222,7 +246,6 @@ uint8_t tohex(uint8_t val){
   return hex;
 }
 
-
 uint8_t smbus_sent(){
   uint8_t count;
   bool martflag = false;
@@ -260,21 +283,8 @@ uint8_t smbus_sent(){
   return 0;
 }
 
-void smbus_commands(){
-    
+void serial_smbus_commands(){    
       uint8_t user_command;
-      uint16_t offset;
-      int count;
-      struct smbusCommand
-        {      
-            uint8_t commands;
-            uint8_t databyte;
-            uint16_t dataword;
-            uint8_t datablock[32];
-            uint16_t blocksize;
-            uint8_t datablock_b[32];
-            uint16_t blocksize_b;              
-        }sm;
   Serial.println(F("Input Smbus Commands: (Hex Data Format)"));
   Serial.println(F("Example Syntax: [03 58 00 01] MSB:03(Smbus Function:) Wirte Byte"));
   Serial.println(F("Smbus Function (0 to 7) Info:"));
@@ -299,148 +309,10 @@ void smbus_commands(){
       user_command = smbus_sent();                              //! Reads the user command
       if (user_command == 'm')   Serial.print(F("m\n"));        // Print m if it is entered
 //      else  Serial.println(user_command);                       // Print user command         
-    switch (user_command)
-    {
-      case 0:
-        Serial.println(F("Smbus Read Byte:"));
-        delay(100);
-        ps_i2c_address = smbus_data[1];
-        sm.commands = smbus_data[2];
-        sm.databyte = smbus_readByte(ps_i2c_address, sm.commands);
-        Serial.printf("%02X: [%02X]\n", sm.commands, sm.databyte);
-        delay(1000);       
-      break;
-      
-      case 1:
-        Serial.println(F("Smbus Read Word:"));
-        delay(100);
-        ps_i2c_address = smbus_data[1];
-        sm.commands = smbus_data[2];
-        sm.dataword = smbus_readWord(ps_i2c_address, sm.commands);
-        Serial.printf("%02X: [%02X %02X]\n", sm.commands, sm.dataword >> 8, (uint8_t)sm.dataword);
-        delay(1000);
-      break;
-        
-      case 2:
-        Serial.println(F("Smbus Read Block:"));
-        delay(100);
-        ps_i2c_address = smbus_data[1];
-        sm.commands = smbus_data[2];
-        sm.blocksize = smbus_data[3]; //Max size 32 block
-        smbus_readBlock(ps_i2c_address, sm.commands, sm.datablock, sm.blocksize);
-        Serial.printf(" %02X:", sm.commands);
-        for (int n = 0; n < sm.blocksize; n++){
-          Serial.printf(" %02X", sm.datablock[n]);
-          delay(100);
-        }
-        Serial.println(F(" "));
-        delay(1000);
-      break;
-            
-      case 3:
-        Serial.println(F("Smbus Write Byte:"));
-        delay(100);
-        ps_i2c_address = smbus_data[1];
-        sm.commands = smbus_data[2];
-        sm.databyte = smbus_data[3];
-        smbus_writeByte(ps_i2c_address, sm.commands, sm.databyte);
-        Serial.println(F("Done."));
-        delay(1000); 
-        break;
-                
-      case 4:
-        Serial.println(F("Smbus Write Word:"));
-        delay(100);
-        ps_i2c_address = smbus_data[1];
-        sm.commands = smbus_data[2];
-        sm.dataword = smbus_data[3] << 8 | smbus_data[4];
-        smbus_writeWord(ps_i2c_address, sm.commands, sm.dataword);
-        Serial.println(F("Done."));
-        delay(1000);
-        break;
-                
-      case 5:
-        Serial.println(F("Smbus Write Block:"));
-        delay(100);
-          ps_i2c_address = smbus_data[1];
-          sm.commands = smbus_data[2];
-          sm.blocksize = smbus_data[3];   // size Max 256 
-          for(int i = 0; i < sm.blocksize; i++) {
-            sm.datablock[i] = smbus_data[4+i];;
-            Serial.printf("Block n=%02X Data:%02X\n", i, sm.datablock[i]);
-            delay(100);     
-          }
-          smbus_writeBlock(ps_i2c_address, sm.commands, sm.datablock, sm.blocksize);
-          Serial.println(F("Done."));
-          delay(1000);     
-        break;
-      
-       case 6:
-        Serial.println(F("Smbus Write Read Blocks:"));
-        delay(100);
-        ps_i2c_address = smbus_data[1];
-        sm.commands = smbus_data[2];
-        sm.blocksize = smbus_data[3];
-        for(int i = 0; i < sm.blocksize; i++) {
-          sm.datablock[i] = smbus_data[i+4];
-//          Serial.printf("Block n=%02X Data:%02X\n", i, sm.datablock[i]);
-//          delay(100);     
-        }
-        sm.blocksize_b = smbus_data[sm.blocksize+4];    
-        smbus_writeReadBlock (ps_i2c_address, sm.commands, sm.datablock, sm.blocksize, sm.datablock_b, sm.blocksize_b);      
-        Serial.printf("%02X:", sm.blocksize_b);              
-        for (int n = 0; n < sm.blocksize_b; n++){
-          Serial.printf(" %02X", sm.datablock_b[n]);
-          delay(100);
-        }
-        Serial.println(F(" "));
-        delay(1000);     
-        break;
-
-       case 7:
-        Serial.println(F("Smbus Sent Byte:"));
-        delay(100);
-        ps_i2c_address = smbus_data[1];
-        sm.commands = smbus_data[2];
-        smbus_sendByte(ps_i2c_address, sm.commands);
-        Serial.println(F("Done."));
-        delay(1000);       
-          break;
-         
-      case 8:
-        Serial.println(F("EEPROM Read Byte"));
-        eeprom_address = smbus_data[1];
-        offset = smbus_data[2] << 8 | smbus_data[3];
-        if(smbus_data[4] == 1) eepromsize = false;
-        else eepromsize = true;
-        eepbuffer[0] = eepromreadbyte(eeprom_address, offset);
-        Serial.printf("offset0x%04X: %02X\n", offset, eepbuffer[0]);
-        Serial.printf("EEPROMSIZE 0x:%02X\n", smbus_data[4]);
-        delay(1000);
-        break;
-      
-      case 9:
-        Serial.println(F("EEPROM Read Bytes"));
-        eeprom_address = smbus_data[1];
-        offset = smbus_data[2] << 8 | smbus_data[3];
-        count = smbus_data[4];
-        if(smbus_data[5] == 1) eepromsize = false;
-        else eepromsize = true;
-        eepromreadbytes(eeprom_address, offset, count, eepbuffer);
-        Serial.printf("offset0x%04X:\n", offset);
-        printFru(0, count-1, eepbuffer); 
-        delay(1000);
-        break;
-      case 'h':
-         SyntaxHelp();
-         delay(1000);         
-      default:
-        if (user_command != 'm' && user_command != 'h')
-          Serial.println(F("Invalid Selection"));
-        break;
-    }
+      smbus_command_sent(user_command);
   }
   while (user_command != 'm');
+  smbusflag = false;
 }
 
 void setIntervaltime() {
@@ -492,10 +364,200 @@ void setModel() {
       delay(500);
 //      if(unitname > 0) standbystatus();
 }
-//
-//void monitorstatus(){
-//  statusflag = !statusflag;
-//  if(statusflag) Serial.print(F("Status Monitor Enable\n"));
-//  else Serial.print(F("Status Monitor Disable\n"));
-//  delay(500);
-//  }
+
+void smbus_command_sent(uint8_t com){
+      
+      uint16_t offset;
+      uint8_t ps_i2c_address_;
+      int count;
+      char d[96];
+      const char hex_table[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+      struct smbusCommand
+        {      
+            uint8_t commands;
+            uint8_t databyte;
+            uint16_t dataword;
+            uint8_t datablock[32];
+            uint16_t blocksize;
+            uint8_t datablock_b[32];
+            uint16_t blocksize_b;              
+        }sm;
+
+  switch (com)
+    {
+      case 0:
+        Serial.println(F("Smbus Read Byte:"));
+        delay(100);
+        ps_i2c_address_ = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.databyte = smbus_readByte(ps_i2c_address_, sm.commands);
+        Serial.printf("%02X: [%02X]\n", sm.commands, sm.databyte);        
+        snprintf (msg, MSG_BUFFER_SIZE, "%02X: [%02X]", sm.commands, sm.databyte);
+        if(mqttflag) client.publish("rrh/pmbus/set/rinfo", msg);      
+        
+        delay(1000);       
+      break;
+      
+      case 1:
+        Serial.println(F("Smbus Read Word:"));
+        delay(100);
+        ps_i2c_address_ = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.dataword = smbus_readWord(ps_i2c_address_, sm.commands);
+        Serial.printf("%02X: [%02X %02X]\n", sm.commands, sm.dataword >> 8, (uint8_t)sm.dataword);
+        snprintf (msg, MSG_BUFFER_SIZE, "%02X: [%02X %02X]", sm.commands, sm.dataword >> 8, (uint8_t)sm.dataword);
+        if(mqttflag) client.publish("rrh/pmbus/set/rinfo", msg);
+     
+        delay(1000);
+      break;
+        
+      case 2:
+        Serial.println(F("Smbus Read Block:"));
+        delay(100);
+        ps_i2c_address_ = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.blocksize = smbus_data[3]; //Max size 32 block
+        smbus_readBlock(ps_i2c_address_, sm.commands, sm.datablock, sm.blocksize);
+        Serial.printf(" %02X:", sm.commands);
+        for (int n = 0; n < sm.blocksize; n++){
+          Serial.printf(" %02X", sm.datablock[n]);
+          d[3*n] = ' ';
+          d[3*n + 1] = hex_table[sm.datablock[n] >> 4];
+          d[3*n + 2] = hex_table[sm.datablock[n] & 0x0f];
+          delay(20);
+        }
+        d[3*sm.blocksize] = '\0';
+        Serial.println(F(" "));
+        snprintf (msg, MSG_BUFFER_SIZE, "[%s]", d);
+        if(mqttflag) client.publish("rrh/pmbus/set/rinfo", msg);                    
+        delay(1000);
+      break;
+            
+      case 3:
+        Serial.println(F("Smbus Write Byte:"));
+        delay(100);
+        ps_i2c_address_ = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.databyte = smbus_data[3];
+        smbus_writeByte(ps_i2c_address_, sm.commands, sm.databyte);
+        Serial.println(F("Done."));
+        snprintf (msg, MSG_BUFFER_SIZE, "WB Done.");
+        if(mqttflag) client.publish("rrh/pmbus/set/winfo", msg);      
+        delay(1000); 
+        break;
+                
+      case 4:
+        Serial.println(F("Smbus Write Word:"));
+        delay(100);
+        ps_i2c_address_ = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.dataword = smbus_data[3] << 8 | smbus_data[4];
+        smbus_writeWord(ps_i2c_address_, sm.commands, sm.dataword);
+        Serial.println(F("Done."));
+        snprintf (msg, MSG_BUFFER_SIZE, "WW Done.");
+        if(mqttflag) client.publish("rrh/pmbus/set/winfo", msg);      
+        delay(1000);
+        break;
+                
+      case 5:
+        Serial.println(F("Smbus Write Block:"));
+        delay(100);
+          ps_i2c_address_ = smbus_data[1];
+          sm.commands = smbus_data[2];
+          sm.blocksize = smbus_data[3];   // size Max 256 
+          for(int i = 0; i < sm.blocksize; i++) {
+            sm.datablock[i] = smbus_data[4+i];;
+            Serial.printf("Block n=%02X Data:%02X\n", i, sm.datablock[i]);
+            delay(20);     
+          }
+          smbus_writeBlock(ps_i2c_address_, sm.commands, sm.datablock, sm.blocksize);
+          Serial.println(F("Done."));
+          snprintf (msg, MSG_BUFFER_SIZE, "WB Done.");
+          if(mqttflag) client.publish("rrh/pmbus/set/winfo", msg);      
+          delay(1000);     
+        break;
+      
+       case 6:
+        Serial.println(F("Smbus Write Read Blocks:"));
+        delay(100);
+        ps_i2c_address_ = smbus_data[1];
+        sm.commands = smbus_data[2];
+        sm.blocksize = smbus_data[3];
+        for(int i = 0; i < sm.blocksize; i++) {
+          sm.datablock[i] = smbus_data[i+4];
+//          Serial.printf("Block n=%02X Data:%02X\n", i, sm.datablock[i]);
+//          delay(100);     
+        }
+        sm.blocksize_b = smbus_data[sm.blocksize+4];    
+        smbus_writeReadBlock (ps_i2c_address_, sm.commands, sm.datablock, sm.blocksize, sm.datablock_b, sm.blocksize_b);      
+        Serial.printf("%02X:", sm.blocksize_b);              
+        for (int n = 0; n < sm.blocksize_b; n++){
+          Serial.printf(" %02X", sm.datablock_b[n]);
+          d[3*n] = ' ';
+          d[3*n + 1] = hex_table[sm.datablock_b[n] >> 4];
+          d[3*n + 2] = hex_table[sm.datablock_b[n] & 0x0f];
+          delay(20);
+        }
+        d[3*sm.blocksize_b] = '\0';
+        Serial.println(F(" "));
+        snprintf (msg, MSG_BUFFER_SIZE, "[%02X%s]",sm.blocksize_b, d);
+        if(mqttflag) client.publish("rrh/pmbus/set/rinfo", msg);      
+        delay(1000);     
+        break;
+
+       case 7:
+        Serial.println(F("Smbus Sent Byte:"));
+        delay(100);
+        ps_i2c_address_ = smbus_data[1];
+        sm.commands = smbus_data[2];
+        smbus_sendByte(ps_i2c_address_, sm.commands);
+        Serial.println(F("Done."));
+        snprintf (msg, MSG_BUFFER_SIZE, "SentByte Done.");
+        if(mqttflag) client.publish("rrh/pmbus/set/winfo", msg);      
+        delay(1000);       
+          break;
+         
+      case 8:
+        Serial.println(F("EEPROM Read Byte"));
+        eeprom_address = smbus_data[1];
+        offset = smbus_data[2] << 8 | smbus_data[3];
+        if(smbus_data[4] == 1) eepromsize = false;
+        else eepromsize = true;
+        eepbuffer[0] = eepromreadbyte(eeprom_address, offset);
+        Serial.printf("offset0x%04X: %02X\n", offset, eepbuffer[0]);
+        Serial.printf("EEPROMSIZE 0x:%02X\n", smbus_data[4]);
+        snprintf (msg, MSG_BUFFER_SIZE, "offset0x%04X: %02X", offset, eepbuffer[0]);
+        if(mqttflag) client.publish("rrh/pmbus/set/rinfo", msg);
+        delay(1000);
+        break;
+      
+      case 9:
+        Serial.println(F("EEPROM Read Bytes"));
+        eeprom_address = smbus_data[1];
+        offset = smbus_data[2] << 8 | smbus_data[3];
+        count = smbus_data[4];
+        if(smbus_data[5] == 1) eepromsize = false;
+        else eepromsize = true;
+        eepromreadbytes(eeprom_address, offset, count, eepbuffer);
+        for (int n = 0; n < count; n++){
+          d[3*n] = ' ';
+          d[3*n + 1] = hex_table[eepbuffer[n] >> 4];
+          d[3*n + 2] = hex_table[eepbuffer[n] & 0x0f];
+          delay(20);
+        }
+        d[3*count] = '\0';
+        Serial.printf("offset0x%04X:\n", offset);
+        printFru(0, count-1, eepbuffer);
+        snprintf (msg, MSG_BUFFER_SIZE, "offset0x%04X:[%s]",offset, d);
+        if(mqttflag) client.publish("rrh/pmbus/set/rinfo", msg); 
+        delay(1000);
+        break;
+      case 'h':
+         SyntaxHelp();
+         delay(1000);         
+      default:
+        if (com != 'm' && com != 'h')
+          Serial.println(F("Invalid Selection"));
+        break;
+    }
+}

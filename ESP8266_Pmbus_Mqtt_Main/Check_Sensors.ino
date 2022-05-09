@@ -6,27 +6,9 @@ void checkSensors(){
         if(readpmbusdata()){
             if(0 != pd.statusWord && statusflag) pmbusStatus();      
             if(0 == count%3) printpmbusData(pd);
-            if(key == 1){
-                monitorstatus();
-                smbus_commands();
-                key = 0;
-            }
-            else if(key == 2){
-                standbystatus();
-                key = 0;
-            }
-            else if(key == 3){
-               Serial.println(F("TBD "));
-               delay(100);
-               key = 0;
-            }
-            else if(key == 4){
-               Serial.println(F("TBD "));
-               delay(100);
-               key = 0;                
-              }       
+            if(wifistatus && mqttflag) publishPmbusData(pd);
+            
           }
-          if(key == 1) smbus_commands();
           count++;
           buttonflag = true;              
      } 
@@ -39,8 +21,8 @@ void publishPmbusData(struct PowerPmbus busData){
       snprintf (msg, MSG_BUFFER_SIZE, "PMBUS_Addr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
       client.publish("rrh/pmbus/status", msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
-      snprintf (msg, MSG_BUFFER_SIZE, "MFR_REV: %01x%01x%01x%01x%01x%01x",ver[0],ver[1],ver[2],ver[3],ver[4],ver[5]);
-      client.publish("rrh/pmbus/fru/version", msg);
+//      snprintf (msg, MSG_BUFFER_SIZE, "MFR_REV: %01x%01x%01x%01x%01x%01x",ver[0],ver[1],ver[2],ver[3],ver[4],ver[5]);
+//      client.publish("rrh/pmbus/fru/version", msg);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
   client.publish("rrh/pmbus/input/volt", msg);
@@ -65,6 +47,13 @@ void publishPmbusData(struct PowerPmbus busData){
 
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.statusWord >> 8, busData.statusWord & 0xFF);
   client.publish("rrh/pmbus/status/word", msg);
+  
+  if(standbyflag){
+  snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputVsb);
+  client.publish("rrh/pmbus/output/vsb", msg);
+  snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputAsb);
+  client.publish("rrh/pmbus/output/csb", msg);
+  }
 }
 
 void printpmbusData(struct PowerPmbus busData)
@@ -329,6 +318,18 @@ void pmbusStatus()
       Serial.println(F("STATUS_CML_MEM_Logic_Fault !! "));
     }
     Serial.println(F(" "));
+        if(wifistatus && mqttflag){
+       tm = pmbus_readStatusTemp(ps_i2c_address);
+       fa = pmbus_readStatusFan(ps_i2c_address);
+       cm = pmbus_readStatusCml(ps_i2c_address);
+       snprintf (msg, MSG_BUFFER_SIZE, "Fan:0x%02x Temp:0x%02x Cml:0x%02x", fa, tm, cm);
+       client.publish("rrh/pmbus/status/fanTempCml", msg);
+       vo = pmbus_readStatusVout(ps_i2c_address);
+       io = pmbus_readStatusIout(ps_i2c_address);
+       in = pmbus_readStatusInput(ps_i2c_address);
+       snprintf (msg, MSG_BUFFER_SIZE, "Vout:0x%02x Iout:0x%02x Input:0x%02x", vo, io, in);
+       client.publish("rrh/pmbus/status/voutIoutInput", msg);
+    }
 }
 
 void printBits(byte myByte){
@@ -389,6 +390,7 @@ bool readpmbusdata()
      pd.outputA = pmbus_readIout(ps_i2c_address);
      pd.inputP = pmbus_readPin(ps_i2c_address);
      pd.outputP = pmbus_readPout(ps_i2c_address);
+     pd.temp1 = pmbus_readOtemp(ps_i2c_address);           //temp sensor 0x8D
      pd.statusWord = pmbus_readStatusWord(ps_i2c_address);
      
      if(unitname > 0)  {
@@ -420,6 +422,7 @@ void monitorstatus(){
   statusflag = !statusflag;
   if(statusflag) Serial.print(F("Status Monitor Enable\n"));
   else Serial.print(F("Status Monitor Disable\n"));
+  key = 0;
   delay(500);
   }
 
@@ -427,6 +430,7 @@ void standbystatus(){
   standbyflag = !standbyflag;
   if(standbyflag) Serial.print(F("Standby Enable\n"));
   else Serial.print(F("Standby Disable\n"));
+  key = 0;
   delay(500);
   }
 

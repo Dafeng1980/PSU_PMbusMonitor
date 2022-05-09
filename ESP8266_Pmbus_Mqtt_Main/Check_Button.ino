@@ -1,5 +1,6 @@
 void checkButton(){
     if(digitalRead(kButtonPin) == 0 && buttonflag){
+          
           delay(10);
         if(digitalRead(kButtonPin) == 0){
               delay(1);
@@ -14,11 +15,33 @@ void checkButton(){
               }
               Serial.printf("\n Key= %#01d:\n", key);
               buttonflag = false;
-              delay(500);             
+              delay(100);           
         }
     }
-   Serial.print(F("Check Button delay 10ms \n"));
-   delay(10); 
+
+    if(smbusflag){
+      if (smbus_data[0] >= 0 && smbus_data[0] <=9) smbus_command_sent(smbus_data[0]);
+      else if(smbus_data[0] == 0xAA){                                  
+        if(smbus_data[1] == 0) ps_i2c_address = smbus_data[2];           //[AA 00 XX] set Pmbus device address
+        else if(smbus_data[1] == 1) pmInterval = (smbus_data[2]<<8)  + smbus_data[3];  //[AA 01 XX XX] Set pmbus poll time;
+        else if(smbus_data[1] == 2) unitname = smbus_data[2];            //[AA 02 XX] set unit 
+      }
+      smbusflag = false;
+    }
+    if(key == 1) monitorstatus();
+    else if(key == 2) standbystatus();
+
+            
+    else if(key == 3){
+               Serial.println(F("TBD "));
+               delay(100);
+               key = 0;
+            }
+    else if(key == 4){
+               Serial.println(F("TBD "));
+               delay(100);
+               key = 0;                
+              }       
 }
 
 void setWifiMqtt(){
@@ -34,7 +57,7 @@ void setWifiMqtt(){
     delay(500);
     k++;
     Serial.print(".");
-    if( k >= 10){
+    if( k >= 20){
     wifistatus = false;
     break;
     }
@@ -97,8 +120,24 @@ void callback(char* topic, byte* payload, unsigned int length) {
     Serial.print((char)payload[i]);
   }
   Serial.println();
-    if ((char)payload[0] == '[')      key = 0;
-    else if ((char)payload[0] == '0')      key = 0;
+    if ((char)payload[0] == '[')  {
+    smbus_data[0] = tohex(payload[1])*16 + tohex(payload[2]);
+//  Serial.printf("Data[0] is: %02x \n", data[0]);
+//  delay(100);
+  for(int i = 0; i < 32; i++){
+    smbusflag = true;
+    if (payload[3*i+3] == ']') break;
+    smbus_data[i+1] = tohex(payload[3*i+4])*16 + tohex(payload[3*i+5]);
+    count = i + 2;
+    if (i == 31) {
+      Serial.println(F("Smbus Invalid format" ));
+      delay(100);
+      smbusflag = false;
+      break; 
+      }      
+    }
+  }
+    else if ((char)payload[0] == '0') key = 0;
     else if ((char)payload[0] == '1') key = 1;
     else if ((char)payload[0] == '2') key = 2;
     else if ((char)payload[0] == '3') key = 3;
@@ -212,23 +251,4 @@ void print_memu()
            Serial.println(F("\nEnter command:"));
            printhelp();
            Serial.println(F(" "));
-        }
-
-// void buttoncheck(){
-//  if (digitalRead(kButtonPin) == 0 && buttonflag){
-//      delay(10);
-//        if(digitalRead(kButtonPin) == 0){
-//              key++;
-//              if (key >= 5) key = 0;
-//               if(scani2c) {
-//                scani2c = false;
-//                Serial.print(F("I2C Detect Device Disable\n"));
-//                pmbusflag = true;
-//                key = 0;
-//                delay(500);
-//              }
-//              Serial.printf("\n Key= %#01d:\n", key);
-//              buttonflag = false;
-//       }
-//    }
-//}       
+        }  

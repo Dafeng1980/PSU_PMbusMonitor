@@ -1,4 +1,4 @@
-/*ESP8266 model: ESP-01S Board SDA = 0; SCL = 2; ESP-12F Board SDA = 4; SCl = 5;
+/*   ESP8266 model: ESP-01S Board SDA = 0; SCL = 2; ESP-12F Board SDA = 4; SCl = 5;
  *               HEKR 1.1 Board  SDA = 0; SCL = 13; LED = 4 Button = 14;
  *               Using the ESP8266 HEKR 1.1 Board (Purple);               
  *   https://play.google.com/store/apps/details?id=com.app.vetru.mqttdashboard  Mqtt Dashboard For  Android Iot APP
@@ -58,6 +58,7 @@ static bool ledstatus = true;
 static bool pecflag = true;
 static bool eepromsize = true;   // true (eeprom data size > 0x100). 
 static bool standbyflag = false;
+static bool smbusflag = false;
 
 const char* ssid = "FAIOT";           // Enter your WiFi name
 const char* password = "20212021";    // Enter WiFi password
@@ -104,7 +105,7 @@ void setup()
   print_memu();   
   pmbus_devices_detect();
   scani2c = false;     
-  }
+}
 
 void loop()
 {     
