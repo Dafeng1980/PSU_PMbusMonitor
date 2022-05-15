@@ -34,63 +34,8 @@ void checkSerial(){
     Serial.printf("\n Key = %#01d:\n", key);
     buttonflag = true;
     delay(100);
-  }
+ }
 }
-
-//void serial_menu_commands(){
-//  uint8_t user_command;       
-//  do{  
-//    Serial.print(F("  1-Pmbus status monitor \n"));
-//    Serial.print(F("  2-Standby info \n"));
-//    Serial.print(F("  3-Smbus Command \n"));
-//    Serial.print(F("  4-Set Mode \n"));
-//    Serial.print(F("  5-I2c scan \n"));
-//    Serial.print(F("  6-Set Device Address \n"));
-//    Serial.print(F("  7-set interval time \n"));
-//    Serial.print(F("  8-mfr_menu_commands \n"));
-//    Serial.print(F("  9-PEC ON/OFF \n"));
-//    Serial.print(F("  m-Main Menu \n"));
-//    Serial.print(F("\nEnter a command: "));  
-//    user_command = read_int();                              //! Reads the user command
-//    if (user_command == 'm')   Serial.print(F("m\n"));     // Print m if it is entered
-//    else  Serial.println(user_command);                    // Print user command     
-//    switch (user_command)
-//    {
-//      case 1:
-//      monitorstatus();
-//      user_command = 'm';
-//        break;
-//      case 2:
-//      standbystatus();
-//        break;
-//      case 3:
-//      smbus_commands();
-//        break;
-//      case 4:
-//      setModel();    
-//        break;
-//      case 5:
-//      i2cdetectsstatus();
-//      break;      
-//      case 6:
-//      reset_address();
-//        break;        
-//      case 7:
-//      setIntervaltime();     
-//        break;        
-//      case 8:
-//        break;        
-//      case 9:
-//      pecstatus();
-//        break;        
-//      default:
-//        if (user_command != 'm')
-//          Serial.println(F("Invalid Selection"));
-//        break;
-//    }
-//  }
-//  while (user_command != 'm'); 
-//}
 
 void mfr_menu_commands(){
         uint8_t user_command;       
@@ -113,6 +58,7 @@ void mfr_menu_commands(){
     {
       case 1:
       serial_smbus_commands();
+//      getRevision();
       Serial.println(F(" "));
         break;
       case 2:
@@ -139,7 +85,8 @@ void mfr_menu_commands(){
          ucd3138MassEraseFlash(0x01);     //Pflash Block0 32k
          delay(30);
          ucd3138MassEraseFlash(0x02);     //Pflash Block1 32k
-         delay(30);  
+         delay(30); 
+//         buzzing();     
         break;        
       case 8:
          Serial.println(F(" "));
@@ -147,10 +94,13 @@ void mfr_menu_commands(){
          Serial.println(F(" "));
           ucd3138FlashDisplay(0x0700);
           Serial.println(F(" "));
+//          buzzing();
           ucd3138FlashDisplay(0x7F00);
           Serial.println(F(" "));
+//          buzzing();
           ucd3138FlashDisplay(0xFF00);
           Serial.println(F(" "));
+//          buzzing();
         break;        
       case 9:
          Serial.println(F(" "));
@@ -161,6 +111,7 @@ void mfr_menu_commands(){
           ucd3138Blocl0PageErase(0x01);  //Erase Pflash Block0 Page 1;
           delay(25);
           ucd3138Write2kChecksum();
+//          buzzing();
         break;        
       default:
         if (user_command != 'm')
@@ -193,40 +144,29 @@ void printhelp(){
       delay(500);  
 }
 
-void pecstatus(){
-    pecflag = !pecflag;
-    if(pecflag) Serial.print(F("PEC Enable\n"));
-    else Serial.print(F("PEC Disable\n"));
-    delay(1000);
-}
-
-void i2cdetectsstatus(){
-  scani2c = !scani2c;
-  if(scani2c) {
-    Serial.print(F("I2C Detect Device Enable\n"));
-    pmbusflag = false;
-  }
-  else {
-    Serial.print(F("I2C Detect Device Disable\n"));
-    pmbusflag = true;
-  }
-  delay(500);
-}
-
-void m24c32Checksum(){
+void eepromChecksum(){
     uint16_t checksum;
     eepromreadbytes(eeprom_address, 0, 128, eepbuffer);
     eepromreadbytes(eeprom_address, 128, 128, eepbuffer+128);       
     checksum = calcCheckSum(eepbuffer, 192);
     Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
     Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
-      if(wifistatus && mqttflag){
-        snprintf (msg, MSG_BUFFER_SIZE, "Ca: 0x%04x Re: 0x%02x%02x", checksum, eepbuffer[190], eepbuffer[191]);
-        client.publish("rrh/pmbus/eeprom/checksum", msg);      
-       } 
-    printFru(0, 0xFF , eepbuffer);   
+    snprintf (msg, MSG_BUFFER_SIZE, "Ca: 0x%04x Re: 0x%02x%02x", checksum, eepbuffer[190], eepbuffer[191]);
+    if(mqttflag) client.publish("rrh/pmbus/eeprom/checksum", msg);
+    printFru(0, 0xFF, eepbuffer);   
 }
- 
+
+uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len){
+     uint16_t sum;
+     int i;  
+     sum = 0;    
+     for (i = 0; i < len; i++) {
+         sum += pBuffer[i];
+     }  
+     sum = 0x00FF & (~sum + 1);  
+     return (sum);
+ }
+
 uint8_t tohex(uint8_t val){
   uint8_t hex;
   if ( val - '0' >= 0 && val - '0' <=9){
@@ -315,26 +255,6 @@ void serial_smbus_commands(){
   smbusflag = false;
 }
 
-void setIntervaltime() {
-      Serial.printf("Current Interval Time(ms):%d\n", pmInterval);
-      Serial.println(F("Input New Interval Time(ms) < 60S :"));
-      pmInterval = read_int();     
-      Serial.printf("New Interval Time(ms):%d\n", pmInterval);
-      delay(1000);
-}
-
-void reset_address(){
-      Serial.printf("Current PSU Address:%#02X; Patner PSU Address:%#02X.\n", ps_i2c_address, ps_patner_address);
-      Serial.println(F("Input PSU address: (Can recognize Hex, Decimal, Octal, or Binary)"));
-      Serial.println(F("Example: Hex: 0x11 (0x prefix) Octal: O21 (letter O prefix) Binary: B10001" ));
-      ps_i2c_address = read_int();     
-      Serial.printf("New PSU address: %#02X\n", ps_i2c_address);
-      Serial.println(F("Input Patner PSU address:"));
-      ps_patner_address = read_int();
-      Serial.printf("New Patner PSU address: %#02X\n", ps_patner_address);
-      delay(1000);
-}
-
 void SyntaxHelp(){
       Serial.println(F("Command Syntax: "));
       Serial.println(F("0-Read Byte(RB)   [Smbus_Fn=00 I2C_Addr Smbus_CMD]"));
@@ -351,19 +271,6 @@ void SyntaxHelp(){
       Serial.println(F("'h' Display This Help."));
       Serial.println(F("'m' Main Menu."));
 }
-void setModel() {
-      Serial.printf("Current PSU Model is %#02X \n", unitname);
-      Serial.println(F("PSU Model Numbers: ()"));
-      Serial.println(F("0 - Standard " ));
-      Serial.println(F("1 - ADP1051 " ));
-      Serial.println(F("2 - Redundancy " ));
-      Serial.println(F("3 - Others " ));
-      Serial.println(F("Input New PSU Model:"));
-      unitname = read_int();     
-      Serial.printf("New PSU Model is: %02x \n", unitname);
-      delay(500);
-//      if(unitname > 0) standbystatus();
-}
 
 void smbus_command_sent(uint8_t com){
       
@@ -371,7 +278,7 @@ void smbus_command_sent(uint8_t com){
       uint8_t ps_i2c_address_;
       int count;
       char d[96];
-      const char hex_table[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
+//   const char hex_table[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
       struct smbusCommand
         {      
             uint8_t commands;
@@ -561,3 +468,58 @@ void smbus_command_sent(uint8_t com){
         break;
     }
 }
+
+//void serial_menu_commands(){
+//  uint8_t user_command;       
+//  do{  
+//    Serial.print(F("  1-Pmbus status monitor \n"));
+//    Serial.print(F("  2-Standby info \n"));
+//    Serial.print(F("  3-Smbus Command \n"));
+//    Serial.print(F("  4-Set Mode \n"));
+//    Serial.print(F("  5-I2c scan \n"));
+//    Serial.print(F("  6-Set Device Address \n"));
+//    Serial.print(F("  7-set interval time \n"));
+//    Serial.print(F("  8-mfr_menu_commands \n"));
+//    Serial.print(F("  9-PEC ON/OFF \n"));
+//    Serial.print(F("  m-Main Menu \n"));
+//    Serial.print(F("\nEnter a command: "));  
+//    user_command = read_int();                              //! Reads the user command
+//    if (user_command == 'm')   Serial.print(F("m\n"));     // Print m if it is entered
+//    else  Serial.println(user_command);                    // Print user command     
+//    switch (user_command)
+//    {
+//      case 1:
+//      monitorstatus();
+//      user_command = 'm';
+//        break;
+//      case 2:
+//      standbystatus();
+//        break;
+//      case 3:
+//      smbus_commands();
+//        break;
+//      case 4:
+//      setModel();    
+//        break;
+//      case 5:
+//      i2cdetectsstatus();
+//      break;      
+//      case 6:
+//      reset_address();
+//        break;        
+//      case 7:
+//      setIntervaltime();     
+//        break;        
+//      case 8:
+//        break;        
+//      case 9:
+//      pecstatus();
+//        break;        
+//      default:
+//        if (user_command != 'm')
+//          Serial.println(F("Invalid Selection"));
+//        break;
+//    }
+//  }
+//  while (user_command != 'm'); 
+//}

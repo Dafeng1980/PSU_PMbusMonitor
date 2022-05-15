@@ -1,6 +1,5 @@
 void checkButton(){
-    if(digitalRead(kButtonPin) == 0 && buttonflag){
-          
+   if(digitalRead(kButtonPin) == 0 && buttonflag){          
           delay(10);
         if(digitalRead(kButtonPin) == 0){
               delay(1);
@@ -19,27 +18,26 @@ void checkButton(){
         }
     }
 
-    if(smbusflag){
+  if(smbusflag){
       if (smbus_data[0] >= 0 && smbus_data[0] <=9) smbus_command_sent(smbus_data[0]);
       else if(smbus_data[0] == 0xAA){                                  
-        if(smbus_data[1] == 0) ps_i2c_address = smbus_data[2];           //[AA 00 XX] set Pmbus device address
-        else if(smbus_data[1] == 1) pmInterval = (smbus_data[2]<<8)  + smbus_data[3];  //[AA 01 XX XX] Set pmbus poll time;
-        else if(smbus_data[1] == 2) unitname = smbus_data[2];            //[AA 02 XX] set unit 
-      }
-      smbusflag = false;
-    }
-    if(key == 1) monitorstatus();
-    else if(key == 2) standbystatus();
+         if(smbus_data[1] == 0) ps_i2c_address = smbus_data[2];           //[AA 00 XX] set Pmbus device address
+         else if(smbus_data[1] == 1) pmInterval = (smbus_data[2]<<8)  + smbus_data[3];  //[AA 01 XX XX] Set pmbus poll time;
+         else if(smbus_data[1] == 2) unitname = smbus_data[2];            //[AA 02 XX] set unit
 
-            
-    else if(key == 3){
-               Serial.println(F("TBD "));
-               delay(100);
+         else if(smbus_data[1] == 5) i2cdetectsstatus();            //[AA 05] Scan Pmbus device.
+         else if(smbus_data[1] == 6) standbystatus();               //[AA 06] Standby monitoring Enable/Disble.
+         else if(smbus_data[1] == 9) pecstatus();                   //[AA 09] PEC Enable/Disable.
+       }
+       smbusflag = false;
+     }
+  if(key == 1) monitorstatus();           
+    else if(key == 2){
+               pmbusexpand = true;
                key = 0;
             }
-    else if(key == 4){
-               Serial.println(F("TBD "));
-               delay(100);
+    else if(key == 3){
+               pmbusexpand1 = true;
                key = 0;                
               }       
 }
@@ -57,6 +55,7 @@ void setWifiMqtt(){
     delay(500);
     k++;
     Serial.print(".");
+    ledflash();
     if( k >= 20){
     wifistatus = false;
     break;
@@ -70,13 +69,62 @@ void setWifiMqtt(){
       Serial.println(WiFi.localIP());
       client.setCallback(callback);
       if(client.connect(clientID, mqtt_user, mqtt_password)) mqttflag = true;
-      Serial.println("MQTT Broker Connected. \n "); 
+      if(mqttflag){
+        Serial.println("MQTT Broker Connected. \n ");
+        client.subscribe("rrh/pmbus/set");
+        delay(100);
+      }       
     } 
   else{
     Serial.println("");
     Serial.println("WiFi connect Failed / Wifi Staus FALSE");
     }
   k = 0; 
+}
+
+void callback(char* topic, byte* payload, unsigned int length) {
+  Serial.print("Message arrived [");
+  Serial.print(topic);
+  Serial.print("] "); 
+  for (int i = 0; i < length; i++) {
+    Serial.print((char)payload[i]);
+  }
+  Serial.println();
+    if ((char)payload[0] == '[')  {
+    smbus_data[0] = tohex(payload[1])*16 + tohex(payload[2]);
+//  Serial.printf("Data[0] is: %02x \n", data[0]);
+//  delay(100);
+  for(int i = 0; i < 32; i++){
+    smbusflag = true;
+    if (payload[3*i+3] == ']') break;
+    smbus_data[i+1] = tohex(payload[3*i+4])*16 + tohex(payload[3*i+5]);
+    count = i + 2;
+    if (i == 31) {
+      Serial.println(F("Smbus Invalid format" ));
+      delay(100);
+      smbusflag = false;
+      break; 
+      }      
+    }
+  }
+    else if ((char)payload[0] == '0') key = 0;
+    else if ((char)payload[0] == '1') key = 1;
+    else if ((char)payload[0] == '2') key = 2;
+    else if ((char)payload[0] == '3') key = 3;
+    else if ((char)payload[0] == '4') key = 4;
+    else key = 0;
+    Serial.printf("\n Key= %#01d:\n", key); 
+}
+
+void mqttLoop(){
+  if (!client.connected()) {
+            reconnect();
+            client.subscribe("rrh/pmbus/set");            
+    }
+  if (mqttflag){    
+      client.loop();      
+//      delay(200);
+    }
 }
 
 void reconnect() {
@@ -112,74 +160,21 @@ void reconnect() {
    }
 }
 
-void callback(char* topic, byte* payload, unsigned int length) {
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
-  for (int i = 0; i < length; i++) {
-    Serial.print((char)payload[i]);
-  }
-  Serial.println();
-    if ((char)payload[0] == '[')  {
-    smbus_data[0] = tohex(payload[1])*16 + tohex(payload[2]);
-//  Serial.printf("Data[0] is: %02x \n", data[0]);
-//  delay(100);
-  for(int i = 0; i < 32; i++){
-    smbusflag = true;
-    if (payload[3*i+3] == ']') break;
-    smbus_data[i+1] = tohex(payload[3*i+4])*16 + tohex(payload[3*i+5]);
-    count = i + 2;
-    if (i == 31) {
-      Serial.println(F("Smbus Invalid format" ));
-      delay(100);
-      smbusflag = false;
-      break; 
-      }      
-    }
-  }
-    else if ((char)payload[0] == '0') key = 0;
-    else if ((char)payload[0] == '1') key = 1;
-    else if ((char)payload[0] == '2') key = 2;
-    else if ((char)payload[0] == '3') key = 3;
-    else if ((char)payload[0] == '4') key = 4;
-    else key = 0;
-    Serial.printf("\n Key= %#01d:\n", key); 
-}
-
-void mqttLoop(){
-  if (!client.connected()) {
-            reconnect();            
-    }
-    if (mqttflag){    
-      client.loop();
-      client.subscribe("rrh/pmbus/set");
-    }
-}
-
 void pmbus_devices_detect(){
-  i2cdetects(0x03, 0x7F);  
+  i2cdetects(0x03, 0x7F);
+  int i = 8;  
   while(scani2c){
-    digitalWrite(kLedPin, HIGH);
+    ledflash();
     pmbusdetects();
-    delay(50);
-    digitalWrite(kLedPin, LOW);
-    delay(210);
+    delay(80);
+    i--;
     if(n > 0) scani2c = false;
-    if (digitalRead(kButtonPin) == 0){
-          delay(10);
-          if(digitalRead(kButtonPin) == 0){
-              buttonflag = false;                   
-              scani2c = false;
-              Serial.print(F("PMbus Detect Device Disable\n"));
-              delay(100);
-          }
-       }
+    if(i == 0) scani2c = false;
     }
     Serial.printf("\nPMBUSADDRESS %#02x:\n", ps_i2c_address);
     n = 0;
     delay(100);
  }
-
 
 void pmbusdetects() {
   uint8_t i, address, error;
@@ -214,7 +209,8 @@ void pmbusdetects() {
 
 void i2cdetects(uint8_t first, uint8_t last) {
   uint8_t i, address, error;
-  //char buff[10];
+  int q = 0;
+  char addr[35];
   Serial.print("   ");            // table header
   for (i = 0; i < 16; i++) {
     Serial.printf("%3x", i);
@@ -231,6 +227,10 @@ void i2cdetects(uint8_t first, uint8_t last) {
       delay(10);
       if (error == 0) {                           // device found
         Serial.printf(" %02x", address);
+        addr[3*q] = hex_table[address >> 4];
+        addr[3*q + 1] = hex_table[address & 0x0f];
+        addr[3*q + 2] = ' ';
+        q++;
       } else if (error == 4) {    // other error      
         Serial.print(" XX");
       } else {                   // error = 2: received NACK on transmit of address              
@@ -239,12 +239,98 @@ void i2cdetects(uint8_t first, uint8_t last) {
     } else {                 // address not scanned      
       Serial.print("   ");
     }
+    if(q > 10) break;
   }
+  addr[3*q] = '\0';
   Serial.println("\n");
+  snprintf (msg, MSG_BUFFER_SIZE, "Scan addr at:0x%s", addr);
+  if(mqttflag) client.publish("rrh/pmbus/set/info", msg);
+//  delay(100); 
 }
 
-void print_memu()
-        {                   
+void pecstatus(){
+    pecflag = !pecflag;
+    if(pecflag) {
+      Serial.print(F("PEC Enable\n"));
+      if(mqttflag) client.publish("rrh/pmbus/status/pec", "1");
+    }
+    else {
+      Serial.print(F("PEC Disable\n"));
+      if(mqttflag) client.publish("rrh/pmbus/status/pec", "0");
+    }
+    delay(500);
+}
+
+void i2cdetectsstatus(){
+  scani2c = !scani2c;
+  if(scani2c) {
+    Serial.print(F("I2C Detect Device Enable\n"));
+    if(mqttflag) client.publish("rrh/pmbus/status/scan", "1");
+    pmbusflag = false;
+  }
+  else {
+    Serial.print(F("I2C Detect Device Disable\n"));
+    if(mqttflag) client.publish("rrh/pmbus/status/scan", "0");
+    pmbusflag = true;
+  }
+  delay(500);
+}
+
+void setIntervaltime() {
+      Serial.printf("Current Interval Time(ms):%d\n", pmInterval);
+      Serial.println(F("Input New Interval Time(ms) < 60S :"));
+      pmInterval = read_int();     
+      Serial.printf("New Interval Time(ms):%d\n", pmInterval);
+      delay(1000);
+}
+
+void reset_address(){
+      Serial.printf("Current PSU Address:%#02X; Patner PSU Address:%#02X.\n", ps_i2c_address, ps_patner_address);
+      Serial.println(F("Input PSU address: (Can recognize Hex, Decimal, Octal, or Binary)"));
+      Serial.println(F("Example: Hex: 0x11 (0x prefix) Octal: O21 (letter O prefix) Binary: B10001" ));
+      ps_i2c_address = read_int();     
+      Serial.printf("New PSU address: %#02X\n", ps_i2c_address);
+      Serial.println(F("Input Patner PSU address:"));
+      ps_patner_address = read_int();
+      Serial.printf("New Patner PSU address: %#02X\n", ps_patner_address);
+      delay(1000);
+}
+
+void setModel() {
+      Serial.printf("Current PSU Model is %#02X \n", unitname);
+      Serial.println(F("PSU Model Numbers: ()"));
+      Serial.println(F("0 - Standard " ));
+      Serial.println(F("1 - ADP1051 " ));
+      Serial.println(F("2 - Redundancy " ));
+      Serial.println(F("3 - Others " ));
+      Serial.println(F("Input New PSU Model:"));
+      unitname = read_int();     
+      Serial.printf("New PSU Model is: %02x \n", unitname);
+      delay(500);
+}
+
+void ledflash(){
+  ledstatus = !ledstatus;
+  if(ledstatus) digitalWrite(kLedPin, HIGH);
+  else digitalWrite(kLedPin, LOW);
+}
+
+void monitorstatus(){
+  statusflag = !statusflag;
+  if(statusflag) Serial.print(F("Status Monitor Enable\n"));
+  else Serial.print(F("Status Monitor Disable\n"));
+  key = 0;
+  delay(500);
+  }
+
+void standbystatus(){
+  standbyflag = !standbyflag;
+  if(standbyflag) Serial.print(F("Standby Enable\n"));
+  else Serial.print(F("Standby Disable\n"));
+  delay(500);
+  }
+
+void print_memu() {                   
            Serial.print(F("PSU PMbus Debug Tools (Smbus Protocol)\n"));
            Serial.print(F("Monitoring PSU Status etc. and Detect i2c Devices\n"));
            Serial.print(F("Send the Smbus Protocol Command.\n"));

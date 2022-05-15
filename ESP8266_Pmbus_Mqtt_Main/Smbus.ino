@@ -30,8 +30,8 @@ uint8_t pecGet(void)
   return runningpec;
 }
 
-uint8_t smbus_waitForAck(uint8_t address, uint8_t command)  //! Read with the address and command in loop until ack, 
-{                                                           //  then issue stop 
+uint8_t smbus_waitForAck(uint8_t address, uint8_t command) //! Read with the address and command in loop until ack, 
+{                                                          //  then issue stop 
   uint8_t data;
   // A real application should timeout at 4.1 seconds.
  // uint16_t timeout = 8192;
@@ -44,7 +44,6 @@ uint8_t smbus_waitForAck(uint8_t address, uint8_t command)  //! Read with the ad
   }
   return 0;    //FAILURE
 }
-
 
 uint8_t smbus_readByte(uint8_t address, uint8_t command)
 {

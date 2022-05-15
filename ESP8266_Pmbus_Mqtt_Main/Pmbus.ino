@@ -218,3 +218,35 @@ uint8_t pmbus_readStatusFan(uint8_t address)
   status_byte = smbus_readByte(address, 0x81);  //STATUS_FAN = 0x81;
   return status_byte;
 }
+
+float pmbus_readEin(uint8_t address)
+{
+  uint8_t data[6];
+  unsigned long lastEnergy,lastSample,currentEnergy,currentSample;
+  float ret;
+    smbus_readBlock(address, 0x86, data, 6);            //READ_EIN = 0x86;
+    lastEnergy = data[0] + data[1]*0x100 + data[2]*0x7FFF;
+    lastSample = data[3] + data[4]*0x100 + data[5]*0x10000;
+    delay(1000);
+    smbus_readBlock(address, 0x86, data, 6);
+    currentEnergy = data[0] + data[1]*0x100 + data[2]*0x7FFF;
+    currentSample = data[3] + data[4]*0x100 + data[5]*0x10000;
+    ret = (float)(currentEnergy - lastEnergy)/(float)(currentSample - lastSample);    
+  return ret;
+}
+
+float pmbus_readEout(uint8_t address)
+{
+  uint8_t data[6];
+  unsigned long lastEnergy,lastSample,currentEnergy,currentSample;
+  float ret;
+    smbus_readBlock(address, 0x87, data, 6);               //READ_EOUT = 0x87;
+    lastEnergy = data[0] + data[1]*0x100 + data[2]*0x7FFF;
+    lastSample = data[3] + data[4]*0x100 + data[5]*0x10000;
+    delay(1000);
+    smbus_readBlock(address, 0x87, data, 6);
+    currentEnergy = data[0] + data[1]*0x100 + data[2]*0x7FFF;
+    currentSample = data[3] + data[4]*0x100 + data[5]*0x10000;
+    ret = (float)(currentEnergy - lastEnergy)/(float)(currentSample - lastSample);    
+  return ret;
+}

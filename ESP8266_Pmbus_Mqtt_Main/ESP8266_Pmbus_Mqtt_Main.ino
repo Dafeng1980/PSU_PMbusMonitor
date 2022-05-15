@@ -15,7 +15,7 @@
 #define PS_ADDRESS 0x58
 #define PS_I2C_ADDRESS 0x58 
 #define PS_PARTNER_ADDRESS 0x5E
-#define MSG_BUFFER_SIZE  (64)
+#define MSG_BUFFER_SIZE  (128)
 #define UI_BUFFER_SIZE 100
 #define I2C_NOSTOP 0
 
@@ -24,11 +24,13 @@ static struct PowerPmbus
   float inputV;
   float inputA;
   float inputP;
+  float inputE;
   float outputV;
   float outputVsb;
   float outputA;
   float outputAsb;
   float outputP;
+  float outputE;
   float fanSpeed;
   float temp1;
   float temp2;
@@ -45,7 +47,7 @@ static uint8_t ps_i2c_address;
 static uint8_t ps_patner_address;
 static int eeprom_address;
 static uint8_t unitname;
-static uint16_t pmInterval = 500;  //PMbus refresh rate (miliseconds) 
+static uint16_t pmInterval = 1000;  //PMbus refresh rate (miliseconds) 
 
 static bool Protocol = true;   // If true, endTransmission() sends a stop message after transmission, releasing the I2C bus.
 static bool wifistatus = true;
@@ -59,6 +61,8 @@ static bool pecflag = true;
 static bool eepromsize = true;   // true (eeprom data size > 0x100). 
 static bool standbyflag = false;
 static bool smbusflag = false;
+static bool pmbusexpand = false;
+static bool pmbusexpand1 = false;
 
 const char* ssid = "FAIOT";           // Enter your WiFi name
 const char* password = "20212021";    // Enter WiFi password
@@ -74,8 +78,10 @@ const int SDA_PIN = 0;         //ESP-01S Board SDA = 0; SCL = 2;   ESP8266 HEKR 
 const int SCL_PIN = 13;       
 //const int SDA_PIN = 4;         
 //const int SCL_PIN = 5;       // ESP-12F Board SDA = 4; SCl = 5;
-const uint8_t kButtonPin = 14;
+//const uint8_t kLedPin = 12;
 const uint8_t kLedPin = 4;
+const uint8_t kButtonPin = 14;
+const char hex_table[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 char msg[MSG_BUFFER_SIZE];
 char ui_buffer[UI_BUFFER_SIZE];
@@ -93,19 +99,19 @@ void setup()
 { 
   pinMode(kButtonPin, INPUT_PULLUP);
   pinMode(kLedPin, OUTPUT);
-  Serial.begin(115200);
+  Serial.begin(38400);
   Wire.begin(SDA_PIN, SCL_PIN);
-//  Wire.setClock(50000);    // Set the I2C clock, default(100kHz);    
+//  Wire.setClock(50000);    // Set the I2C clock(50kHz), default(100kHz);    
   digitalWrite(kLedPin, LOW);
   setWifiMqtt();  
   delay(100);
   ps_i2c_address = PS_I2C_ADDRESS;
   ps_patner_address = PS_PARTNER_ADDRESS;
-  pecflag = PEC_DISABLE;
-  print_memu();   
+  pecflag = PEC_DISABLE;    
+  print_memu();
   pmbus_devices_detect();
   scani2c = false;     
-}
+  }
 
 void loop()
 {     

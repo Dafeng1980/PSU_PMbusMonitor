@@ -2,27 +2,83 @@ void checkSensors(){
   unsigned long currentMillis = millis();
   if (currentMillis - previousMillis >= pmInterval){
         previousMillis = currentMillis;
-        if(scani2c) i2cdetects(0x00, 0x7F);
+        if(wifistatus) mqttLoop();
+        if(scani2c) i2cdetects(0x03, 0x7F);
         if(readpmbusdata()){
             if(0 != pd.statusWord && statusflag) pmbusStatus();      
             if(0 == count%3) printpmbusData(pd);
             if(wifistatus && mqttflag) publishPmbusData(pd);
-            
+            if(wifistatus) mqttLoop();           
           }
           count++;
-          buttonflag = true;              
+          buttonflag = true;                  
      } 
 }
 
-void publishPmbusData(struct PowerPmbus busData){
+bool readpmbusdata(){   
+      bool ret = true;
+      if(!pmbusflag) return ret = false;  
+      if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {  //0x00 PAGE read         
+          if(wifistatus && mqttflag){
+            if(count%6 == 0){
+              ++value;     
+              snprintf (msg, MSG_BUFFER_SIZE, "PMBUS Polling Fail  Loop#%ld", value);
+              client.publish("rrh/pmbus/status", msg);
+            }
+          }
+          Serial.println(F("PMBUS Polling Fail, Type 'h' To Help\n"));
+          delay(20);      
+          return ret = false;
+       }
+     pd.i2cAddr = ps_i2c_address;
+     pd.inputV = pmbus_readVin(ps_i2c_address);
+     pd.inputA = pmbus_readIin(ps_i2c_address);
+     pd.outputV = pmbus_readVout(ps_i2c_address);
+     pd.outputA = pmbus_readIout(ps_i2c_address);
+     pd.inputP = pmbus_readPin(ps_i2c_address);
+     pd.outputP = pmbus_readPout(ps_i2c_address);
+     pd.temp1 = pmbus_readOtemp(ps_i2c_address);        //temp sensor 0x8D                
+     pd.statusWord = pmbus_readStatusWord(ps_i2c_address);
      
+     if(pmbusexpand){
+     pd.inputE = pmbus_readEin(ps_i2c_address);            //Ein 0x86
+     pd.outputE = pmbus_readEout(ps_i2c_address);         //Eout 0x87
+     }
+     if(pmbusexpand1){
+     pd.temp2 = pmbus_readItemp(ps_i2c_address);        //temp sensor 0x8E  
+     pd.temp3 = pmbus_readMtemp(ps_i2c_address);        //temp sensor 0x8F  
+     pd.fanSpeed = pmbus_readFanSpeed1(ps_i2c_address);
+     }    
+     if(standbyflag){
+     pmbus_setPage(ps_i2c_address,1);                    //set Page to 1, read 12Vsb 
+     pd.outputVsb = pmbus_readVout(ps_i2c_address);
+     pd.outputAsb = pmbus_readIout(ps_i2c_address);
+     pmbus_setPage(ps_i2c_address,0);
+     }     
+     delay(20);
+     return ret;     
+}
+
+bool pmbus_device_act(){
+      uint8_t  error;
+      bool ret;
+      Wire.beginTransmission(ps_i2c_address);
+      error = Wire.endTransmission();
+      if (error == 0) return ret = true;
+      else {
+        Serial.print(F("No PMbus device\n"));
+        delay(50);
+        return ret = false;
+      }
+}
+
+void publishPmbusData(struct PowerPmbus busData){
+  ledflash();   
  if (count%6 == 0) {
       ++value;     
       snprintf (msg, MSG_BUFFER_SIZE, "PMBUS_Addr: 0x%02x Refresh#%ld", busData.i2cAddr, value );
       client.publish("rrh/pmbus/status", msg);
       Serial.printf("\nPMBUS_PUBLISH_REFRESH  %#01d \n", value);
-//      snprintf (msg, MSG_BUFFER_SIZE, "MFR_REV: %01x%01x%01x%01x%01x%01x",ver[0],ver[1],ver[2],ver[3],ver[4],ver[5]);
-//      client.publish("rrh/pmbus/fru/version", msg);
     }
   snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputV);
   client.publish("rrh/pmbus/input/volt", msg);
@@ -48,16 +104,31 @@ void publishPmbusData(struct PowerPmbus busData){
   snprintf (msg, MSG_BUFFER_SIZE, "0x%02x%02x", busData.statusWord >> 8, busData.statusWord & 0xFF);
   client.publish("rrh/pmbus/status/word", msg);
   
-  if(standbyflag){
-  snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputVsb);
-  client.publish("rrh/pmbus/output/vsb", msg);
-  snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputAsb);
-  client.publish("rrh/pmbus/output/csb", msg);
+  if(pmbusexpand){
+    snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.inputE);
+    client.publish("rrh/pmbus/input/energy", msg);
+    snprintf (msg, MSG_BUFFER_SIZE, "%3.2f", busData.outputE);
+    client.publish("rrh/pmbus/output/energy", msg);
   }
+
+  if(pmbusexpand1){
+    snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp2);
+    client.publish("rrh/pmbus/sensor/temp2", msg);
+    snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.temp3);
+    client.publish("rrh/pmbus/sensor/temp3", msg);
+    snprintf (msg, MSG_BUFFER_SIZE, "%2.1f", busData.fanSpeed);
+    client.publish("rrh/pmbus/sensor/fan", msg);
+  }
+  
+  if(standbyflag){
+    snprintf (msg, MSG_BUFFER_SIZE, "%5.4f", busData.outputVsb);
+    client.publish("rrh/pmbus/output/vsb", msg);
+    snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputAsb);
+    client.publish("rrh/pmbus/output/csb", msg);
+  } 
 }
 
-void printpmbusData(struct PowerPmbus busData)
-{
+void printpmbusData(struct PowerPmbus busData){
     ledflash();
     Serial.println(F("========== PMBUS DATA =========="));
     Serial.println(" ");
@@ -84,7 +155,15 @@ void printpmbusData(struct PowerPmbus busData)
     Serial.print(busData.outputP, 2);
     Serial.println(F("W"));
     Serial.println(F(" "));
-       
+    
+    if(pmbusexpand) {
+    Serial.print(F("In_Energy: "));
+    Serial.print(busData.inputE, 1);
+    Serial.print(F("W"));
+    Serial.print(F("   Out_Energy: "));
+    Serial.print(busData.outputE, 1);
+    Serial.println(F("W"));      
+    }       
     if(standbyflag){
     Serial.print(F("V_Standby: "));
     Serial.print(busData.outputVsb, 3);
@@ -94,6 +173,22 @@ void printpmbusData(struct PowerPmbus busData)
     Serial.println(F("A"));
     Serial.println(F(" "));
     }
+    if(pmbusexpand1) {
+      Serial.print(F("TEMP_8D: "));
+      Serial.print(busData.temp1, 0);
+      Serial.print(F("C")); 
+      Serial.print(F("  TEMP_8E: "));
+      Serial.print(busData.temp2, 0);
+      Serial.print(F("C"));
+      Serial.print(F("  TEMP_8F: "));
+      Serial.print(busData.temp3, 0);
+      Serial.println(F("C"));
+      Serial.print(F("FANSPEED_0x90: "));
+      Serial.print(busData.fanSpeed, 0);
+      Serial.println(F("rpm"));
+      Serial.println(F(" "));
+    }
+    
     Serial.print(F("STATUS WORD: 0x"));
    // Serial.println(busData.statusWord, HEX);
     Serial.printf("%04x\n", busData.statusWord);    
@@ -107,19 +202,10 @@ void printpmbusData(struct PowerPmbus busData)
     Serial.printf("%02x\n", busData.statusWord >> 8);
     Serial.println(F(" "));
     
-    if(unitname == 1) {
-    Serial.print(F("TEMP_8D: "));
-    Serial.print(busData.temp1, 0);
-    Serial.println(F("C"));      
-    }
-    else if(unitname == 2) {
+    if(unitname == 3) {      
       Serial.print(F("TEMP_8D: "));
       Serial.print(busData.temp1, 0);
       Serial.print(F("C")); 
-      Serial.print(F("TEMP_8D: "));
-      Serial.print(F("TEMP_8D: "));
-      Serial.print(busData.temp1, 0);
-      Serial.print(F("C"));
       Serial.print(F("  TEMP_8E: "));
       Serial.print(busData.temp2, 0);
       Serial.print(F("C"));
@@ -130,33 +216,10 @@ void printpmbusData(struct PowerPmbus busData)
       Serial.print(busData.fanSpeed, 0);
       Serial.println(F("rpm"));
       Serial.println(F(" "));
-    }
-
-    else if(unitname == 3) {
-      
-      Serial.print(F("TEMP_8D: "));
-      Serial.print(busData.temp1, 0);
-      Serial.print(F("C")); 
-      Serial.print(F("TEMP_8D: "));
-      Serial.print(F("TEMP_8D: "));
-      Serial.print(busData.temp1, 0);
-      Serial.print(F("C"));
-      Serial.print(F("  TEMP_8E: "));
-      Serial.print(busData.temp2, 0);
-      Serial.print(F("C"));
-      Serial.print(F("  TEMP_8F: "));
-      Serial.print(busData.temp3, 0);
-      Serial.println(F("C"));
-      Serial.print(F("FANSPEED_0x90: "));
-      Serial.print(busData.fanSpeed, 0);
-      Serial.println(F("rpm"));
-      Serial.println(F(" "));
-    }
-    
+    }    
 }
 
-void pmbusStatus()
-{
+void pmbusStatus(){
     uint16_t w_val;
     uint8_t msb,lsb,io,in,tm,fa,vo,cm;
     Serial.println(F("========= READ ALL STATUS =========="));
@@ -318,17 +381,15 @@ void pmbusStatus()
       Serial.println(F("STATUS_CML_MEM_Logic_Fault !! "));
     }
     Serial.println(F(" "));
-        if(wifistatus && mqttflag){
+    if(wifistatus && mqttflag){
        tm = pmbus_readStatusTemp(ps_i2c_address);
        fa = pmbus_readStatusFan(ps_i2c_address);
        cm = pmbus_readStatusCml(ps_i2c_address);
-       snprintf (msg, MSG_BUFFER_SIZE, "Fan:0x%02x Temp:0x%02x Cml:0x%02x", fa, tm, cm);
-       client.publish("rrh/pmbus/status/fanTempCml", msg);
        vo = pmbus_readStatusVout(ps_i2c_address);
        io = pmbus_readStatusIout(ps_i2c_address);
        in = pmbus_readStatusInput(ps_i2c_address);
-       snprintf (msg, MSG_BUFFER_SIZE, "Vout:0x%02x Iout:0x%02x Input:0x%02x", vo, io, in);
-       client.publish("rrh/pmbus/status/voutIoutInput", msg);
+       snprintf (msg, MSG_BUFFER_SIZE, "Cml:0x%02x Temp:0x%02x Fan:0x%02x Vout:0x%02x Iout:0x%02x Input:0x%02x", cm, tm, fa, vo, io, in);
+       client.publish("rrh/pmbus/status/all", msg);
     }
 }
 
@@ -366,106 +427,3 @@ void printFru(uint8_t first, uint8_t last, uint8_t *values) {
             }
       Serial.println("\n");
 }
-
-bool readpmbusdata()
-{   
-      bool ret = true;
-      if(!pmbusflag) return ret = false;  
-      if(smbus_waitForAck(ps_i2c_address, 0x00) == 0) {  //0x00 PAGE read         
-          if(wifistatus && mqttflag){
-            if(count%6 == 0){
-              ++value;     
-              snprintf (msg, MSG_BUFFER_SIZE, "PMBUS Polling Fail  Loop#%ld", value);
-              client.publish("rrh/pmbus/status", msg);
-            }
-          }
-          Serial.println(F("PMBUS Polling Fail, Type 'h' To Help\n"));
-          delay(20);      
-          return ret = false;
-       }
-     pd.i2cAddr = ps_i2c_address;
-     pd.inputV = pmbus_readVin(ps_i2c_address);
-     pd.inputA = pmbus_readIin(ps_i2c_address);
-     pd.outputV = pmbus_readVout(ps_i2c_address);
-     pd.outputA = pmbus_readIout(ps_i2c_address);
-     pd.inputP = pmbus_readPin(ps_i2c_address);
-     pd.outputP = pmbus_readPout(ps_i2c_address);
-     pd.temp1 = pmbus_readOtemp(ps_i2c_address);           //temp sensor 0x8D
-     pd.statusWord = pmbus_readStatusWord(ps_i2c_address);
-     
-     if(unitname > 0)  {
-     pd.temp1 = pmbus_readOtemp(ps_i2c_address);           //temp sensor 0x8D
-     if(unitname == 2) {  
-     pd.temp2 = pmbus_readItemp(ps_i2c_address);        //temp sensor 0x8E  
-     pd.temp3 = pmbus_readMtemp(ps_i2c_address);        //temp sensor 0x8F  
-     pd.fanSpeed = pmbus_readFanSpeed1(ps_i2c_address);
-     }    
-     if(standbyflag){
-     pmbus_setPage(ps_i2c_address,1);                    //set Page to 1, read 12Vsb 
-     pd.outputVsb = pmbus_readVout(ps_i2c_address);
-     pd.outputAsb = pmbus_readIout(ps_i2c_address);
-     pmbus_setPage(ps_i2c_address,0);
-     }
-   }      
-     delay(20);
-     return ret;     
-}
-
-void ledflash(){
-  ledstatus = !ledstatus;
-  if(ledstatus) digitalWrite(kLedPin, HIGH);
-  else digitalWrite(kLedPin, LOW);
-}
-
-
-void monitorstatus(){
-  statusflag = !statusflag;
-  if(statusflag) Serial.print(F("Status Monitor Enable\n"));
-  else Serial.print(F("Status Monitor Disable\n"));
-  key = 0;
-  delay(500);
-  }
-
-void standbystatus(){
-  standbyflag = !standbyflag;
-  if(standbyflag) Serial.print(F("Standby Enable\n"));
-  else Serial.print(F("Standby Disable\n"));
-  key = 0;
-  delay(500);
-  }
-
-void mromChecksum(){
-    uint16_t checksum;
-    eepromreadbytes(eeprom_address, 0, 128, eepbuffer);
-    eepromreadbytes(eeprom_address, 128, 128, eepbuffer+128);       
-    checksum = calcCheckSum(eepbuffer, 192);
-    Serial.printf("EEPROM_CALC_CheckSum: 0x%04x \n", checksum);
-    Serial.printf("EEPROM_READ_CheckSum: 0x%02x%02x \n", eepbuffer[190], eepbuffer[191]);
-    printFru(0, 0xFF, eepbuffer);   
-}
-
-bool pmbus_device_act(){
-      uint8_t  error;
-      bool ret;
-      Wire.beginTransmission(ps_i2c_address);
-      error = Wire.endTransmission();
-      if (error == 0) return ret = true;
-      else {
-        Serial.print(F("No PMbus device\n"));
-        delay(50);
-        return ret = false;
-      }
-}
-
-
-uint16_t calcCheckSum (uint8_t *pBuffer, uint16_t len)
- {
-     uint16_t sum;
-     int i;  
-     sum = 0;
-     for (i = 0; i < len; i++) {
-         sum += pBuffer[i];
-     }  
-     sum = 0x00FF & (~sum + 1);  
-     return (sum);
- }
