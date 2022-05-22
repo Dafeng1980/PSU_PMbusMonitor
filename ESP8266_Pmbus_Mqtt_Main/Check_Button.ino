@@ -19,18 +19,29 @@ void checkButton(){
     }
 
   if(smbusflag){
-      if (smbus_data[0] >= 0 && smbus_data[0] <=9) smbus_command_sent(smbus_data[0]);
-      else if(smbus_data[0] == 0xAA){                                  
+      if (smbus_data[0] >= 0 && smbus_data[0] <=9) smbus_command_sent(smbus_data[0]);   // send smbus command
+      else if(smbus_data[0] == 0xAA){                                                   // set pmbus 
          if(smbus_data[1] == 0) ps_i2c_address = smbus_data[2];           //[AA 00 XX] set Pmbus device address
          else if(smbus_data[1] == 1) pmInterval = (smbus_data[2]<<8)  + smbus_data[3];  //[AA 01 XX XX] Set pmbus poll time;
          else if(smbus_data[1] == 2) unitname = smbus_data[2];            //[AA 02 XX] set unit
 
          else if(smbus_data[1] == 5) i2cdetectsstatus();            //[AA 05] Scan Pmbus device.
          else if(smbus_data[1] == 6) standbystatus();               //[AA 06] Standby monitoring Enable/Disble.
+         else if(smbus_data[1] == 7) pmbusexpand = true;
+         else if(smbus_data[1] == 8) pmbusexpand = false;         
          else if(smbus_data[1] == 9) pecstatus();                   //[AA 09] PEC Enable/Disable.
+         else if(smbus_data[1] == 10) pmbusexpand1 = true;
+         else if(smbus_data[1] == 11) pmbusexpand1 = false;
        }
+     else if(smbus_data[0] == 0xCC){                               //send SCPI command  
+        if(smbus_data[1] == 0) setdynload();
+     }
        smbusflag = false;
      }
+  if(scpiflag) {
+    sendscpi(scpicmd);
+    scpiflag = false;
+  }
   if(key == 1) monitorstatus();           
     else if(key == 2){
                pmbusexpand = true;
@@ -107,6 +118,16 @@ void callback(char* topic, byte* payload, unsigned int length) {
       }      
     }
   }
+  else if ((char)payload[0] == '%') {
+      for (int i = 0; i < length; i++) {
+          scpicmd[i] = payload[i + 1];
+          if( '%' == payload[i + 1]){
+            scpicmd[i] = '\0';
+            scpiflag = true;
+            break;
+          }          
+       }
+    }
     else if ((char)payload[0] == '0') key = 0;
     else if ((char)payload[0] == '1') key = 1;
     else if ((char)payload[0] == '2') key = 2;
