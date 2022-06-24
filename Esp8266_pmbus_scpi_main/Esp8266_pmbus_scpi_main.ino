@@ -11,6 +11,7 @@
 #include <ArduinoLog.h>
 #include <PubSubClient.h>
 
+#define Base_Topic "rrh/"
 #define TWI_BUFFER_SIZE 128
 #define PEC_ENABLE  1      //Smbus PEC(Packet Error Code) support. 1 = Enabled, 0 = Disabled.
 #define PEC_DISABLE  0
@@ -58,6 +59,7 @@ static bool dataflag = true;
 static bool buttonflag = true;
 static bool scani2c = true;    //initialze i2c address, 
 static bool pmbusflag = true;
+static bool smbuscomun = false;
 static bool statusflag = true;
 static bool ledstatus = true;
 static bool pecflag = true;
@@ -70,15 +72,14 @@ static bool expandengery = false;
 static bool expandsensor = false;
 static bool setscpicurr = false;
 
-
 const char* ssid = "FAIOT";           // Enter your WiFi name 
 const char* password = "20212021";    // Enter WiFi password
 //const char* ssid = "CMCC-kS9s";           //
 //const char* password = "DA431431";    // 
 const char* mqtt_user = "dfiot";      //Raspberry MQTT Broker
 const char* mqtt_password = "123abc";
-//const char* mqtt_server = "192.168.1.36";
-const char* mqtt_server = "192.168.12.1";
+const char* mqtt_server = "192.168.200.2";
+//const char* mqtt_server = "192.168.12.1";
 const uint16_t mqtt_port =  1883;
 //const char *mqtt_user = "emqx";
 //const char *mqtt_password = "public";
@@ -97,6 +98,7 @@ const uint8_t kButtonPin = 13;
 //const uint8_t kButtonPin = 13;
 const char hex_table[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
+char mqtt_topic[50] = Base_Topic;
 char msg[MSG_BUFFER_SIZE];
 char scpicmd[MSG_BUFFER_SIZE];
 char ui_buffer[UI_BUFFER_SIZE];
@@ -133,7 +135,7 @@ void setup() {
     defaultint();
     Serial1.begin(38400); 
     Serial.begin(38400);
-    Log.begin(LOG_LEVEL, &Serial1, false);
+    Log.begin(LOG_LEVEL, &Serial1, false);  //
     Wire.begin(SDA_PIN, SCL_PIN);
 //  Wire.setClock(50000);    // Set the I2C clock(50kHz), default(100kHz);    
     digitalWrite(kLedPin, LOW);

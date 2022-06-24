@@ -63,13 +63,12 @@ void checkButton() {
          else if(smbus_data[1] == 1) pmInterval = (smbus_data[2]<<8)  + smbus_data[3];  //[AA 01 XX XX] Set pmbus poll time /ms;
          else if(smbus_data[1] == 2) pmbusflagset(smbus_data[2]);         //[AA 03 00] Disable PMbus.
          else if(smbus_data[1] == 3) monitorstatus();
+         else if(smbus_data[1] == 4) expandsensor = true;
          else if(smbus_data[1] == 5) i2cdetectsstatus();            //[AA 05] Scan Pmbus device.
          else if(smbus_data[1] == 6) standbystatus();               //[AA 06] Standby monitoring Enable/Disble.
          else if(smbus_data[1] == 7) expandengery = true;            //
          else if(smbus_data[1] == 8) expandengery = false;         
          else if(smbus_data[1] == 9) pecstatus();                   //[AA 09] PEC Enable/Disable.
-         else if(smbus_data[1] == 10) expandsensor = true;
-         else if(smbus_data[1] == 11) expandsensor = false;
          else if(smbus_data[1] == 0xAA) key = 4;                     //set default
          else if(smbus_data[1] ==0xBB) esprestar();                 //reset device
        }
@@ -134,7 +133,7 @@ void setWifiMqtt(){
   }
   delay(50);
  if(wifistatus){
-      Log.begin(LOG_LEVEL, &Serial1, false);
+      Log.begin(LOG_LEVEL, &Serial1, false); //
       randomSeed(micros());
       Log.notice(CR );
       client.setCallback(callback);
@@ -145,8 +144,9 @@ void setWifiMqtt(){
       if(client.connect(client_id.c_str(), mqtt_user, mqtt_password)) {
           mqttflag = true;
           Log.noticeln("MQTT Broker Connected.");
-          client.subscribe("rrh/pmbus/set");
-          client.subscribe("rrh/pmbus/set/curr");
+//          client.subscribe("rrh/pmbus/set");
+          sub("pmbus/set/#");
+//          sub("pmbus/set/curr");
         } 
       else{
           mqttflag = false;        
@@ -157,9 +157,48 @@ void setWifiMqtt(){
   }
 }
 
+void subMQTT(const char* topic) {
+   if(client.subscribe(topic)){
+     Log.traceln(F("Subscription OK to the subjects %s"), topic);;
+  } else {
+    Log.traceln(F("Subscription failed, rc=%d"), client.state());
+  }
+}
+
+void sub(const char* topicori) {
+  String topic = String(mqtt_topic) + String(topicori);
+  subMQTT(topic);
+}
+
+void subMQTT(String topic) {
+  subMQTT(topic.c_str());
+}
+
+void pubMQTT(const char* topic, const char* payload, bool retainFlag) {
+  if (client.connected()) {
+    Log.traceln(F("[MQTT_publish] topic: %s msg: %s "), topic, payload);
+    client.publish(topic, payload, retainFlag);
+  } else {
+    Log.traceln(F("Client not connected, aborting thes publication"));
+  }
+}
+
+void pubMQTT(const char* topic, const char* payload) {
+  pubMQTT(topic, payload, false);
+}
+
+void pubMQTT(String topic, const char* payload) {
+  pubMQTT(topic.c_str(), payload);
+}
+
+void pub(const char* topicori, const char* payload) {
+  String topic = String(mqtt_topic) + String(topicori);
+  pubMQTT(topic, payload);
+}
+
 void callback(char* topic, byte* payload, unsigned int length) {
     String inPayload = "";
-    String currtopic = "rrh/pmbus/set/curr";
+    String currtopic = String(mqtt_topic) + "pmbus/set/curr";
 //    byte* p = (byte*)malloc(length + 1);
 //    memcpy(p, payload, length);
 //    p[length] = '\0';
@@ -183,7 +222,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
             }
           if (i >= 36) {
               Log.noticeln(F("Smbus Invalid format"));
-              client.publish("rrh/pmbus/set/info", "Smbus Invalid format");
+              pub("pmbus/set/info", "Smbus Invalid format");
               subsmbusflag = false;
               delay(100);
               break; 
@@ -201,7 +240,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
           }
           if(i >= (length - 1)){
             Log.noticeln(F("Scpi Invalid format"));
-            client.publish("rrh/scpi/info", "Scpi Invalid format");
+            pub("scpi/info", "Scpi Invalid format");
             subscpiflag = false;
             delay(100);         
           }
@@ -219,8 +258,7 @@ void mqttLoop(){
   if(wifistatus){
     if (!client.connected()) {
             reconnect();
-            client.subscribe("rrh/pmbus/set");
-            client.subscribe("rrh/pmbus/set/curr");            
+            sub("pmbus/set/#");          
         }
     if (mqttflag){    
           client.loop();      
@@ -243,7 +281,7 @@ void reconnect() {
       client_id = clientID + String(WiFi.macAddress());
     if (client.connect(client_id.c_str(), mqtt_user, mqtt_password)) {
       Log.noticeln("connected to broker");
-      client.publish("rrh/outTopic", "Broker reconnected");  // Once connected, publish an announcement...
+      pub("outTopic", "Broker reconnected");  // Once connected, publish an announcement...
       mqttflag = true;   
     }
     else {
@@ -267,19 +305,21 @@ void pmbus_devices_init(){
   ps_i2c_address = PS_I2C_ADDRESS;
   ps_patner_address = PS_PARTNER_ADDRESS;
   pecflag = PEC_DISABLE;
+  i2cdetects(0x03, 0x7F);
   int i = 3;
   int n = 0;
-  i2cdetects(0x03, 0x7F);   
-  while(scani2c){
+  bool scanpsu = true;    
+  while(scanpsu){
     ledflash();
     pmbusdetects();
     delay(100);
     i--;
-    if(n > 0) scani2c = false;
-    if(i <= 0) scani2c = false;
+    if(n > 1)  scanpsu = false;
+    if(i <= 0) scanpsu = false;
     }
     Log.noticeln("PMBUSADDRESS 0x%x:", ps_i2c_address);
     n = 0;
+    scanpsu = false;
     delay(100);
  }
 
@@ -355,19 +395,19 @@ void i2cdetects(uint8_t first, uint8_t last) {
   addr[3*q] = '\0';
   Log.noticeln("" CR);
   snprintf (msg, MSG_BUFFER_SIZE, "Scan addr at:0x%s", addr);
-  if(mqttflag) client.publish("rrh/pmbus/set/info", msg); 
+  pub("pmbus/set/info", msg); 
 }
 
 void pmbusflagset(uint8_t val){
   if(val == 0) {
     pmbusflag = false;
     Log.noticeln(F("pmbusflag Disable"));
-    if(mqttflag) client.publish("rrh/pmbus/enable", "0");
+    pub("pmbus/enable", "0");
   }
   else {
     pmbusflag = true;
     Log.noticeln(F("pmbusflag Enable"));
-    if(mqttflag) client.publish("rrh/pmbus/enable", "1");
+    pub("pmbus/enable", "1");
   }
   delay(100);
 }
@@ -376,11 +416,11 @@ void pecstatus(){
     pecflag = !pecflag;
     if(pecflag) {
       Log.noticeln(F("PEC Enable"));
-      if(mqttflag) client.publish("rrh/pmbus/pec", "1");
+      pub("pmbus/pec", "1");
     }
     else {
       Log.noticeln(F("PEC Disable"));
-      if(mqttflag) client.publish("rrh/pmbus/pec", "0");
+      pub("pmbus/pec", "0");
     }
     delay(100);
 }
@@ -389,12 +429,12 @@ void i2cdetectsstatus(){
   scani2c = !scani2c;
   if(scani2c) {
     Log.noticeln(F("I2C Detect Device Enable"));
-    if(mqttflag) client.publish("rrh/pmbus/scan", "1");
-     pmbusflag = false;
+    pub("pmbus/scan", "1");
+    pmbusflag = false;
   }
   else {
     Log.noticeln(F("I2C Detect Device Disable"));
-    if(mqttflag) client.publish("rrh/pmbus/scan", "0");
+    pub("pmbus/scan", "0");
     pmbusflag = true;
   }
   delay(100);
@@ -430,11 +470,11 @@ void monitorstatus(){
   statusflag = !statusflag;
   if(statusflag) {
     Log.noticeln(F("Status Monitor Enable"));
-    if(mqttflag) client.publish("rrh/pmbus/monitor", "1");
+    pub("pmbus/monitor", "1");
   }
   else {
       Log.noticeln(F("Status Monitor Disable"));
-      if(mqttflag) client.publish("rrh/pmbus/monitor", "0");
+      pub("pmbus/monitor", "0");
   }
   delay(100);
  }
@@ -443,11 +483,11 @@ void standbystatus(){
   standbyflag = !standbyflag;
   if(standbyflag) {
     Log.noticeln(F("Standby Enable"));
-    if(mqttflag) client.publish("rrh/pmbus/standby", "1");
+    pub("pmbus/standby", "1");
   }
   else {
     Log.noticeln(F("Standby Disable"));
-    if(mqttflag) client.publish("rrh/pmbus/standby", "0");
+    pub("pmbus/standby", "0");
   }
   delay(100);
  }

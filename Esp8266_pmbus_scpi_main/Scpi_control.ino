@@ -1,25 +1,24 @@
-
 void sendscpiread(char *msg) {
   bool readback = false;
   if(cont_str(msg) == 0xAF){
-      Log.noticeln(F("SCPI Commands, Failed"));
-      if(mqttflag) client.publish("rrh/scpi/info", "SCPI Commands, Failed");
+      Log.noticeln(F("SCPI Commands, Fail"));
+      pub("scpi/info", "SCPI Commands, Fail");
       delay(10);
       return;
    }
-  if(msg[(cont_str(msg) - 2)] == '?') readback = true;
+//  if(msg[(cont_str(msg) - 2)] == '?') readback = true;
   Serial.println(msg);
-  if(readback) {
-        if(read_scpi() != 0xAF) {
-                 if(mqttflag) client.publish("rrh/scpi/readback", ui_buffer);
-                 Log.noticeln("%s", ui_buffer);  
+  if(msg[(cont_str(msg) - 2)] == '?') {
+        if(read_scpi() != 0xAF) {                 
+                 Log.noticeln("%s", ui_buffer);
+                 pub("scpi/readback", ui_buffer);  
              }
         else {
-                Log.noticeln(F("SCPI Read Time Out, Failed"));
-                if(mqttflag) client.publish("rrh/scpi/readback", "SCPI Read Time Out, Failed");
+                Log.noticeln(F("SCPI Read Time Out, Fail"));
+                pub("scpi/readback", "SCPI Read Time Out, Fail");
               }
    }
-    if(mqttflag) client.publish("rrh/scpi/info", msg);
+    pub("scpi/info", msg);
     Log.noticeln("%s", msg);
     delay(10);
 }
@@ -35,7 +34,7 @@ void modifycurr(float val){
   delay(20);
   Serial.println("load 1");
   delay(10);
-  if(mqttflag) client.publish("rrh/scpi/info", currval);
+  pub("scpi/info", currval);
 }
 
 void setdynload(){
@@ -58,7 +57,6 @@ void setdynload(){
   Serial.println("load 1");
   delay(20);  
 }
-
 
 int cont_str(char *str) {
   int i = 0;
@@ -88,6 +86,6 @@ uint8_t read_scpi()
       delay(10);             // allow 10ms for linefeed to appear on serial pins
     if (Serial.peek() == '\n') Serial.read(); // if linefeed appears, read it and throw it away
   }
-  if(mqttflag) client.publish("rrh/scpi/readback", "SCPI Readblack, comleate");
+//  pub("scpi/readback", "SCPI Readblack, comleate");
   return index; // return number of characters, not including null terminator
 }

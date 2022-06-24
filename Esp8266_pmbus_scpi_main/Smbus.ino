@@ -1,4 +1,3 @@
-
 uint8_t    runningpec;     //!< Temporary pec calc value
 
 void pecClear(void)
@@ -122,12 +121,20 @@ void smbus_writeByte(uint8_t address, uint8_t command, uint8_t data)
     pecAdd(data);
     buffer[1] = pecGet();
     if (i2c_writeBlockData(address, command, 2, buffer))
-      Log.errorln(F("Write Byte With Pec: fail."));
+     { 
+        Log.errorln(F("Write Byte With Pec: fail."));
+        smbuscomun =false;
+     }
+     else smbuscomun = true;
   }
   else
   {
     if (i2c_writeByteData(address, command, data))
-      Log.errorln(F("Write Byte: fail."));
+      {
+        Log.errorln(F("Write Byte: fail."));
+        smbuscomun =false;
+      }
+     else smbuscomun = true;
   }
 }
 
@@ -180,14 +187,22 @@ void smbus_writeWord(uint8_t address, uint8_t command, uint16_t data)
     pecAdd(data >> 8);
     buffer[2] = pecGet();
     if (i2c_writeBlockData(address, command, 3, buffer))
-      Log.errorln(F("Write Word With Pec: fail."));
+      {
+        Log.errorln(F("Write Word With Pec: fail."));
+        smbuscomun =false;
+      }
+    else smbuscomun =true;
   }
   else
   {
     uint16_t rdata;
     rdata = (data << 8) | (data >> 8);
     if (i2c_writeWordData(address, command, rdata))
-      Log.errorln(F("Write Word: fail."));
+      {
+        Log.errorln(F("Write Word: fail."));
+        smbuscomun =false;
+      }
+      else smbuscomun =true;
   }
 }
 
@@ -212,7 +227,11 @@ void smbus_writeBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t
     data_with_pec[block_size + 1] = pec;
 
     if (i2c_writeBlockData(address, command, block_size + 2, data_with_pec))
-      Log.errorln(F("Write Block With Pec: fail."));
+      {
+        Log.errorln(F("Write Block With Pec: fail."));
+        smbuscomun =false;
+      }
+    else smbuscomun =true; 
     free(data_with_pec);
   }
   else
@@ -221,7 +240,11 @@ void smbus_writeBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t
     buffer[0] = block_size;
     memcpy(buffer + 1, block, block_size);
     if (i2c_writeBlockData(address, command, block_size + 1, buffer))
-      Log.errorln(F("Write Block: fail."));
+      {
+        Log.errorln(F("Write Block: fail."));
+        smbuscomun =false;
+      }
+    else smbuscomun =true;
     free(buffer);
   }
 }
@@ -274,7 +297,6 @@ uint8_t smbus_readBlock(uint8_t address, uint8_t command, uint8_t *block, uint16
   }
 }
 
-
 uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_out, uint16_t block_out_size, uint8_t *block_in, uint16_t block_in_size)
 {
   if (pecflag)
@@ -289,7 +311,6 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_ou
     while (pos < block_out_size)
       pecAdd(block_out[pos++]);
 
-
     uint8_t *buffer = (uint8_t *)malloc(block_out_size + 1);
     buffer[0] = block_out_size;
     memcpy(buffer + 1, block_out, block_out_size);
@@ -297,8 +318,6 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_ou
     if (i2c_writeBlockData(address, command, block_out_size + 1, buffer))
       Log.errorln(F("Write/Read Block w/PEC: write fail"));
     free(buffer);
-
-
 
     pecAdd((address << 1) | 0x01);
     Protocol = true;  // sends a stop message after transmission
@@ -347,7 +366,6 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_ou
     return actual_block_size;
   }
 }
-
 
 void smbus_sendByte(uint8_t address, uint8_t command)
 {
