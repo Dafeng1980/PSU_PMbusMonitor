@@ -61,7 +61,7 @@ void checkButton() {
       else if(smbus_data[0] == 0xAA){                                                   // set pmbus 
          if     (smbus_data[1] == 0) ps_i2c_address = smbus_data[2];           //[AA 00 XX] Modify the Pmbus device address
          else if(smbus_data[1] == 1) pmInterval = (smbus_data[2]<<8)  + smbus_data[3];  //[AA 01 XX XX] Set pmbus poll time /ms;
-         else if(smbus_data[1] == 2) pmbusflagset(smbus_data[2]);         //[AA 03 00] Disable PMbus.
+         else if(smbus_data[1] == 2) pmbusflagset(smbus_data[2]);         //[AA 02 00] Disable PMbus.
          else if(smbus_data[1] == 3) monitorstatus();
          else if(smbus_data[1] == 4) expandsensor = true;
          else if(smbus_data[1] == 5) i2cdetectsstatus();            //[AA 05] Scan Pmbus device.
@@ -73,7 +73,9 @@ void checkButton() {
          else if(smbus_data[1] ==0xBB) esprestar();                 //reset device
        }
      else if(smbus_data[0] == 0xCC){                               //send SCPI script command  
-        if(smbus_data[1] == 0) setdynload();
+        if(smbus_data[1] == 0) currlh = true;
+        else if(smbus_data[1] == 1) currlh = false;
+        else if(smbus_data[1] == 2)setdynload(); 
      }
        subsmbusflag = false;
        buttonflag = true;
@@ -84,7 +86,9 @@ void checkButton() {
     buttonflag = true;
   }
   if(setscpicurr) {
+    if(currlh)
     modifycurr(setcurr);
+    else modifycurrl(setcurr);
     setscpicurr = false;
     buttonflag = true;
   }
@@ -146,6 +150,7 @@ void setWifiMqtt(){
           Log.noticeln("MQTT Broker Connected.");
 //          client.subscribe("rrh/pmbus/set");
           sub("pmbus/set/#");
+          sub("scpi/set/#");
 //          sub("pmbus/set/curr");
         } 
       else{
@@ -161,7 +166,7 @@ void subMQTT(const char* topic) {
    if(client.subscribe(topic)){
      Log.traceln(F("Subscription OK to the subjects %s"), topic);;
   } else {
-    Log.traceln(F("Subscription failed, rc=%d"), client.state());
+    Log.traceln(F("Subscription Failed, rc=%d"), client.state());
   }
 }
 
@@ -198,7 +203,7 @@ void pub(const char* topicori, const char* payload) {
 
 void callback(char* topic, byte* payload, unsigned int length) {
     String inPayload = "";
-    String currtopic = String(mqtt_topic) + "pmbus/set/curr";
+    String currtopic = String(mqtt_topic) + "scpi/set/curr";
 //    byte* p = (byte*)malloc(length + 1);
 //    memcpy(p, payload, length);
 //    p[length] = '\0';
@@ -222,7 +227,7 @@ void callback(char* topic, byte* payload, unsigned int length) {
             }
           if (i >= 36) {
               Log.noticeln(F("Smbus Invalid format"));
-              pub("pmbus/set/info", "Smbus Invalid format");
+              pub("pmbus/info", "Smbus Invalid format");
               subsmbusflag = false;
               delay(100);
               break; 
@@ -258,7 +263,8 @@ void mqttLoop(){
   if(wifistatus){
     if (!client.connected()) {
             reconnect();
-            sub("pmbus/set/#");          
+            sub("pmbus/set/#");
+            sub("scpi/set/#");          
         }
     if (mqttflag){    
           client.loop();      
@@ -285,7 +291,7 @@ void reconnect() {
       mqttflag = true;   
     }
     else {
-      Log.notice("failed, rc= %d", client.state());
+      Log.notice("Failed, rc= %d", client.state());
 //      Serial1.print(client.state());
       Log.noticeln(" try again in 2 seconds");
       k++;
@@ -395,7 +401,7 @@ void i2cdetects(uint8_t first, uint8_t last) {
   addr[3*q] = '\0';
   Log.noticeln("" CR);
   snprintf (msg, MSG_BUFFER_SIZE, "Scan addr at:0x%s", addr);
-  pub("pmbus/set/info", msg); 
+  pub("pmbus/info", msg); 
 }
 
 void pmbusflagset(uint8_t val){
@@ -531,7 +537,9 @@ void defaultint(){
             subscpiflag = false;
             pmbusflag = true;
             statusflag = true;
-            buttonflag = true;            
+            buttonflag = true;
+            smbuscomun = true;
+            Protocol = true;            
             pmInterval = 1000;
             key = 0;
             Log.noticeln("Set to Default");

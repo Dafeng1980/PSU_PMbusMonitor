@@ -1,12 +1,10 @@
 void sendscpiread(char *msg) {
-  bool readback = false;
   if(cont_str(msg) == 0xAF){
       Log.noticeln(F("SCPI Commands, Fail"));
       pub("scpi/info", "SCPI Commands, Fail");
       delay(10);
       return;
    }
-//  if(msg[(cont_str(msg) - 2)] == '?') readback = true;
   Serial.println(msg);
   if(msg[(cont_str(msg) - 2)] == '?') {
         if(read_scpi() != 0xAF) {                 
@@ -29,6 +27,20 @@ void modifycurr(float val){
   Serial.println("*rst");
   delay(20);
   Serial.println("mode 1");
+  delay(20);
+  Serial.println(currval);
+  delay(20);
+  Serial.println("load 1");
+  delay(10);
+  pub("scpi/info", currval);
+}
+
+void modifycurrl(float val){
+  char currval[32];
+  sprintf(currval, "curr:stat:l1 %2.1f", val );
+  Serial.println("*rst");
+  delay(20);
+  Serial.println("mode 0");
   delay(20);
   Serial.println(currval);
   delay(20);

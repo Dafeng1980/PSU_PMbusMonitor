@@ -11,15 +11,14 @@
 #include <ArduinoLog.h>
 #include <PubSubClient.h>
 
-#define Base_Topic "rrh/"
+#define Base_Topic "npi/"
 #define TWI_BUFFER_SIZE 128
 #define PEC_ENABLE  1      //Smbus PEC(Packet Error Code) support. 1 = Enabled, 0 = Disabled.
 #define PEC_DISABLE  0
-#define PS_ADDRESS 0x58
 #define PS_I2C_ADDRESS 0x58 
 #define PS_PARTNER_ADDRESS 0x5E
 #define MSG_BUFFER_SIZE  (128)
-#define UI_BUFFER_SIZE 100
+#define UI_BUFFER_SIZE (200)
 #define I2C_NOSTOP 0
 #define LOG_LEVEL LOG_LEVEL_VERBOSE
 
@@ -43,8 +42,7 @@ static struct PowerPmbus
   uint8_t i2cAddr;  
 }pd;
 
-static uint8_t ver[6];
-uint8_t smbus_data[64];
+uint8_t smbus_data[128];
 static uint8_t eepbuffer[256];
 static uint8_t key = 0;
 static uint8_t ps_i2c_address;
@@ -71,6 +69,7 @@ static bool serialflag = false;
 static bool expandengery = false;
 static bool expandsensor = false;
 static bool setscpicurr = false;
+bool currlh = true;
 
 const char* ssid = "FAIOT";           // Enter your WiFi name 
 const char* password = "20212021";    // Enter WiFi password
@@ -95,7 +94,6 @@ const uint8_t kButtonPin = 13;
 //const int SDA_PIN = 4;         
 //const int SCL_PIN = 5;       // ESP-12F Board SDA = 4; SCl = 5;
 //const uint8_t kLedPin = 12;
-//const uint8_t kButtonPin = 13;
 const char hex_table[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
 
 char mqtt_topic[50] = Base_Topic;
@@ -103,7 +101,6 @@ char msg[MSG_BUFFER_SIZE];
 char scpicmd[MSG_BUFFER_SIZE];
 char ui_buffer[UI_BUFFER_SIZE];
 unsigned long previousMillis = 0;
-unsigned long lastMsg = 0;
 long count = 0;
 uint16_t value = 0;
 float setcurr;
@@ -112,7 +109,6 @@ int debounce = 20; // ms debounce period to prevent flickering when pressing or 
 int DCgap = 200; // max ms between clicks for a double click event
 int holdTime = 2000; // ms hold period: how long to wait for press+hold event
 int longHoldTime = 5000; // ms long hold period: how long to wait for press+hold event
-
              // Other button variables
 boolean buttonVal = HIGH; // value read from button
 boolean buttonLast = HIGH; // buffered value of the button's previous state

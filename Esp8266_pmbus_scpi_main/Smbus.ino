@@ -56,21 +56,25 @@ uint8_t smbus_readByte(uint8_t address, uint8_t command)
     pecAdd(address << 1);
     pecAdd(command);
     pecAdd((address << 1) | 0x01);
-    if (i2c_readBlockData(address, command, 2, input))
-      Log.errorln(F("Read Byte With Pec: fail"));
-
+    if (i2c_readBlockData(address, command, 2, input)){
+      Log.errorln(F("Read Byte With Pec: Fail"));
+      smbuscomun =false;
+    }
     pecAdd(input[0]);
-    if (pecGet() != input[1])
-      Log.errorln(F("Read Byte With Pec: fail pec"));
-
+    if (pecGet() != input[1]){
+      Log.errorln(F("Read Byte With Pec: Fail pec"));
+      smbuscomun =false;
+    }
     return input[0];
   }
   else
   {
     uint8_t result;
 
-    if (i2c_readByteData(address, command, &result))
-      Log.errorln(F("Read Byte: fail."));
+    if (i2c_readByteData(address, command, &result)){
+      Log.errorln(F("Read Byte: Fail."));
+      smbuscomun =false;
+    }
     return result;
   }
 }
@@ -89,21 +93,26 @@ uint16_t smbus_readWord(uint8_t address, uint8_t command){
     pecAdd((address << 1) | 0x01);
 
     if (i2c_readBlockData(address, command, 3, input))
-      Log.errorln(F("Read Word With Pec: fail"));
-
+      {
+        Log.errorln(F("Read Word With Pec: Fail"));
+        smbuscomun =false;
+      }
     pecAdd(input[0]);
     pecAdd(input[1]);
-    if (pecGet() != input[2])
-      Log.errorln(F("Read Word With Pec: fail pec"));
-
+    if (pecGet() != input[2]){
+      Log.errorln(F("Read Word With Pec: Fail pec"));
+      smbuscomun =false;
+    }
     return input[1] << 8 | input[0];
   }
   
   else
   {
     uint16_t rdata;
-    if (i2c_readWordData(address, command, &rdata))
-      Log.errorln(F("Read Word: fail."));
+    if (i2c_readWordData(address, command, &rdata)) {
+      Log.errorln(F("Read Word: Fail."));
+      smbuscomun =false;
+    }
     return (rdata << 8) | (rdata >> 8);
   }
 }
@@ -122,7 +131,7 @@ void smbus_writeByte(uint8_t address, uint8_t command, uint8_t data)
     buffer[1] = pecGet();
     if (i2c_writeBlockData(address, command, 2, buffer))
      { 
-        Log.errorln(F("Write Byte With Pec: fail."));
+        Log.errorln(F("Write Byte With Pec: Fail."));
         smbuscomun =false;
      }
      else smbuscomun = true;
@@ -131,7 +140,7 @@ void smbus_writeByte(uint8_t address, uint8_t command, uint8_t data)
   {
     if (i2c_writeByteData(address, command, data))
       {
-        Log.errorln(F("Write Byte: fail."));
+        Log.errorln(F("Write Byte: Fail."));
         smbuscomun =false;
       }
      else smbuscomun = true;
@@ -154,8 +163,10 @@ void smbus_writeBytes(uint8_t *addresses, uint8_t *commands, uint8_t *data, uint
       pecAdd(data[index]);
       buffer[1] = pecGet();
 
-      if (i2c_writeBlockData(addresses[index], commands[index], 2, buffer))
-        Log.errorln(F("Write Bytes With Pec: fail."));
+      if (i2c_writeBlockData(addresses[index], commands[index], 2, buffer)){
+        Log.errorln(F("Write Bytes With Pec: Fail."));
+        smbuscomun =false;
+      }
       index++;
     }
   }
@@ -165,8 +176,10 @@ void smbus_writeBytes(uint8_t *addresses, uint8_t *commands, uint8_t *data, uint
 
     while (index < no_addresses)
     {
-      if (i2c_writeBlockData(addresses[index], commands[index], 1, &data[index]))
-        Log.errorln(F("Write Bytes: fail."));
+      if (i2c_writeBlockData(addresses[index], commands[index], 1, &data[index])){
+        Log.errorln(F("Write Bytes: Fail."));
+        smbuscomun =false;
+      }
       index++;
     }
   }
@@ -188,7 +201,7 @@ void smbus_writeWord(uint8_t address, uint8_t command, uint16_t data)
     buffer[2] = pecGet();
     if (i2c_writeBlockData(address, command, 3, buffer))
       {
-        Log.errorln(F("Write Word With Pec: fail."));
+        Log.errorln(F("Write Word With Pec: Fail."));
         smbuscomun =false;
       }
     else smbuscomun =true;
@@ -199,7 +212,7 @@ void smbus_writeWord(uint8_t address, uint8_t command, uint16_t data)
     rdata = (data << 8) | (data >> 8);
     if (i2c_writeWordData(address, command, rdata))
       {
-        Log.errorln(F("Write Word: fail."));
+        Log.errorln(F("Write Word: Fail."));
         smbuscomun =false;
       }
       else smbuscomun =true;
@@ -228,7 +241,7 @@ void smbus_writeBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t
 
     if (i2c_writeBlockData(address, command, block_size + 2, data_with_pec))
       {
-        Log.errorln(F("Write Block With Pec: fail."));
+        Log.errorln(F("Write Block With Pec: Fail."));
         smbuscomun =false;
       }
     else smbuscomun =true; 
@@ -241,7 +254,7 @@ void smbus_writeBlock(uint8_t address, uint8_t command, uint8_t *block, uint16_t
     memcpy(buffer + 1, block, block_size);
     if (i2c_writeBlockData(address, command, block_size + 1, buffer))
       {
-        Log.errorln(F("Write Block: fail."));
+        Log.errorln(F("Write Block: Fail."));
         smbuscomun =false;
       }
     else smbuscomun =true;
@@ -264,16 +277,18 @@ uint8_t smbus_readBlock(uint8_t address, uint8_t command, uint8_t *block, uint16
 
     if (i2c_readBlockData(address, command, block_size + 2, buffer))
 
-      if (buffer[0] > block_size)
-        Log.errorln(F("Read Block with PEC: fail size too big."));
-
+      if (buffer[0] > block_size){
+        Log.errorln(F("Read Block with PEC: Fail size too big."));
+        smbuscomun =false;
+      }
     memcpy(block, buffer + 1, block_size);
 
     for (pos = 0; pos<buffer[0] + 1u; pos++)
       pecAdd(buffer[pos]);
-    if (pecGet() != buffer[buffer[0]+1])
-      Log.errorln(F("Read Block With Pec: fail pec"));
-
+    if (pecGet() != buffer[buffer[0]+1]) {
+      Log.errorln(F("Read Block With Pec: Fail pec"));
+      smbuscomun =false;
+    }
     actual_block_size = buffer[0];
     free(buffer);
     return actual_block_size;
@@ -283,11 +298,14 @@ uint8_t smbus_readBlock(uint8_t address, uint8_t command, uint8_t *block, uint16
     uint8_t *buffer = (uint8_t *)malloc(block_size + 1);
     uint8_t actual_block_size;
 
-    if (i2c_readBlockData(address, command, block_size + 1, buffer))
-      Log.errorln(F("Read Block: fail."));
+    if (i2c_readBlockData(address, command, block_size + 1, buffer)) {
+      Log.errorln(F("Read Block: Fail."));
+      smbuscomun =false;
+    }
     if (buffer[0] > block_size)
     {
-      Log.errorln(F("Read Block: fail size too big."));
+      Log.errorln(F("Read Block: Fail size too big."));
+      smbuscomun =false;
     }
     memcpy(block, buffer + 1, block_size);
 
@@ -315,26 +333,32 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_ou
     buffer[0] = block_out_size;
     memcpy(buffer + 1, block_out, block_out_size);
     Protocol = false;  //sends a restart message after transmission.
-    if (i2c_writeBlockData(address, command, block_out_size + 1, buffer))
-      Log.errorln(F("Write/Read Block w/PEC: write fail"));
+    if (i2c_writeBlockData(address, command, block_out_size + 1, buffer)){
+      Log.errorln(F("Write/Read Block w/PEC: write Fail"));
+      smbuscomun =false;
+    }
     free(buffer);
 
     pecAdd((address << 1) | 0x01);
     Protocol = true;  // sends a stop message after transmission
     buffer = (uint8_t *)malloc(block_in_size + 2);
-    if (i2c_readBlockData(address, block_in_size + 2, buffer))
-      Log.errorln(F("Write/Read Block w/PEC: read fail."));
+    if (i2c_readBlockData(address, block_in_size + 2, buffer)){
+      Log.errorln(F("Write/Read Block w/PEC: read Fail."));
+      smbuscomun =false;
+    }
     if (buffer[0] > block_in_size)
     {
-      Log.errorln(F("Write/Read Block w/PEC: fail read size too big."));
+      Log.errorln(F("Write/Read Block w/PEC: Fail read size too big."));
+      smbuscomun =false;
     }
     memcpy(block_in, buffer + 1, block_in_size);
 
     for (pos = 0; pos<buffer[0] + 1u; pos++)
       pecAdd(buffer[pos]);
-    if (pecGet() != buffer[buffer[0]+1])
-      Log.errorln(F("Write/Read Block w/Pec: fail pec"));
-
+    if (pecGet() != buffer[buffer[0]+1]){
+      Log.errorln(F("Write/Read Block w/Pec: Fail pec"));
+      smbuscomun =false;
+    }
     actual_block_size = buffer[0];
     free(buffer);
     return actual_block_size;
@@ -343,21 +367,25 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_ou
   {
     uint8_t *buffer = (uint8_t *)malloc(block_out_size + 1);
     uint8_t actual_block_size;
-
     buffer[0] = block_out_size;
     memcpy(buffer + 1, block_out, block_out_size);
 
     Protocol = false;  //sends a restart message after transmission.
-    if (i2c_writeBlockData(address, command, block_out_size + 1, buffer))
-      Log.errorln(F("Write/Read Block write fail"));
+    if (i2c_writeBlockData(address, command, block_out_size + 1, buffer)){
+      Log.errorln(F("Write/Read Block write Fail"));
+      smbuscomun =false;
+    }
     free(buffer);
     Protocol = true;  // sends a stop message after transmission
     buffer = (uint8_t *)malloc(block_in_size + 1);
-    if (i2c_readBlockData(address, block_in_size + 1, buffer))
-      Log.errorln(F("Write/Read Block: read fail."));
+    if (i2c_readBlockData(address, block_in_size + 1, buffer)){
+      Log.errorln(F("Write/Read Block: read Fail."));
+      smbuscomun =false;
+    }
     if (buffer[0] > block_in_size)
     {
-      Log.errorln(F("Write/Read Block: fail size too big."));
+      Log.errorln(F("Write/Read Block: Fail size too big."));
+      smbuscomun =false;
     }
     memcpy(block_in, buffer + 1, block_in_size);
 
@@ -372,18 +400,21 @@ void smbus_sendByte(uint8_t address, uint8_t command)
   if (pecflag)
   {
     uint8_t pec;
-
     pecClear();
     pecAdd(address << 1);
     pecAdd(command);
     pec = pecGet();
 
-    if (i2c_writeBlockData(address, command, 1, &pec))
-      Log.errorln(F("Send Byte With Pec: fail"));
+    if (i2c_writeBlockData(address, command, 1, &pec)){
+      Log.errorln(F("Send Byte With Pec: Fail"));
+      smbuscomun =false;
+    }
   }
   else
   {
-    if (i2c_writeByte(address, command))
-      Log.errorln(F("Send Byte: fail."));
+    if (i2c_writeByte(address, command)) {
+      Log.errorln(F("Send Byte: Fail."));
+      smbuscomun =false;
+    }
   }
 }
