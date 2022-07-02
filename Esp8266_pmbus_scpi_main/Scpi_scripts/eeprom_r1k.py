@@ -43,6 +43,7 @@ client.on_message = on_message
 client.username_pw_set(username, password)
 client.connect(broker, port, 60)
 client.loop_start()
+sub('pmbus/info/eread')
 
 def sentcom(offset, addr = 0x50):
 	msb = offset >> 8
