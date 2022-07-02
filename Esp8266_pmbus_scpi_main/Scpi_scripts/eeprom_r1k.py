@@ -24,7 +24,7 @@ def sub(topic):
 def strmat(msg):
 	if(msg.find('Fail') > 0):
 		return "EEPROM Read Fail"
-	str1 = msg[2:15]
+	str1 = msg[8:15]
 	first = msg.find('[')
 	end = msg.find(']')
 	if(msg[first+1] == ' '):
