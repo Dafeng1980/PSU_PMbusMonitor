@@ -26,21 +26,8 @@ void modifycurr(float val){
   sprintf(currval, "curr:stat:l1 %2.1f", val );
   Serial.println("*rst");
   delay(20);
-  Serial.println("mode 1");
-  delay(20);
-  Serial.println(currval);
-  delay(20);
-  Serial.println("load 1");
-  delay(10);
-  pub("scpi/info", currval);
-}
-
-void modifycurrl(float val){
-  char currval[32];
-  sprintf(currval, "curr:stat:l1 %2.1f", val );
-  Serial.println("*rst");
-  delay(20);
-  Serial.println("mode 0");
+  if(currlh) Serial.println("mode 1");
+  else Serial.println("mode 0");
   delay(20);
   Serial.println(currval);
   delay(20);

@@ -4,9 +4,10 @@ void checkSensors(){
         previousMillis = currentMillis;
         if(scani2c) i2cdetects(0x03, 0x7F);
         if(readpmbusdata()){
-            if(0 != pd.statusWord && statusflag) pmbusStatus();      
-            if(0 == count%3) printpmbusData(pd);
-            if(wifistatus && mqttflag) publishPmbusData(pd);        
+            if(0 != pd.statusWord && statusflag && serialflag) pmbusStatus();                 
+            if(wifistatus && mqttflag) publishPmbusData(pd);
+            if(wifistatus && mqttflag && statusflag) pubPmbusStatus();
+            if(0 == count%3 && serialflag) printpmbusData(pd);         
           }
           count++;
           buttonflag = true;                  
@@ -108,6 +109,18 @@ void publishPmbusData(struct PowerPmbus busData){
     snprintf (msg, MSG_BUFFER_SIZE, "%4.3f", busData.outputAsb);
     pub("pmbus/output/csb", msg);
   } 
+}
+
+void pubPmbusStatus() {
+       uint8_t io,in,tm,fa,vo,cm;
+       tm = pmbus_readStatusTemp(ps_i2c_address);    //0x7D
+       fa = pmbus_readStatusFan(ps_i2c_address);     //0x81
+       cm = pmbus_readStatusCml(ps_i2c_address);     //0x7E
+       vo = pmbus_readStatusVout(ps_i2c_address);    //0x7A Status_Vout
+       io = pmbus_readStatusIout(ps_i2c_address);    //0x7B 
+       in = pmbus_readStatusInput(ps_i2c_address);   //0x7C
+       snprintf (msg, MSG_BUFFER_SIZE, "Cml:0x%02x Temp:0x%02x Fan:0x%02x Vout:0x%02x Iout:0x%02x Input:0x%02x", cm, tm, fa, vo, io, in);
+       pub("pmbus/status/all", msg);
 }
 
 void printpmbusData(struct PowerPmbus busData){
@@ -281,16 +294,16 @@ void pmbusStatus(){
       Log.noticeln(F("STATUS_CML_MEM_Logic_Fault !! "));
     }
     Log.noticeln(F(" "));
-    if(wifistatus && mqttflag){
-       tm = pmbus_readStatusTemp(ps_i2c_address);
-       fa = pmbus_readStatusFan(ps_i2c_address);
-       cm = pmbus_readStatusCml(ps_i2c_address);
-       vo = pmbus_readStatusVout(ps_i2c_address);
-       io = pmbus_readStatusIout(ps_i2c_address);
-       in = pmbus_readStatusInput(ps_i2c_address);
-       snprintf (msg, MSG_BUFFER_SIZE, "Cml:0x%02x Temp:0x%02x Fan:0x%02x Vout:0x%02x Iout:0x%02x Input:0x%02x", cm, tm, fa, vo, io, in);
-       pub("pmbus/status/all", msg);
-    }
+//    if(wifistatus && mqttflag){
+//       tm = pmbus_readStatusTemp(ps_i2c_address);
+//       fa = pmbus_readStatusFan(ps_i2c_address);
+//       cm = pmbus_readStatusCml(ps_i2c_address);
+//       vo = pmbus_readStatusVout(ps_i2c_address);
+//       io = pmbus_readStatusIout(ps_i2c_address);
+//       in = pmbus_readStatusInput(ps_i2c_address);
+//       snprintf (msg, MSG_BUFFER_SIZE, "Cml:0x%02x Temp:0x%02x Fan:0x%02x Vout:0x%02x Iout:0x%02x Input:0x%02x", cm, tm, fa, vo, io, in);
+//       pub("pmbus/status/all", msg);
+//    }
 }
 
 void printFru(uint8_t first, uint8_t last, uint8_t *values) {

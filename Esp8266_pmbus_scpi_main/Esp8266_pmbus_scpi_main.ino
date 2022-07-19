@@ -130,7 +130,7 @@ void setup() {
     pinMode(kLedPin, OUTPUT);
     defaultint();
     Serial1.begin(38400); 
-    Serial.begin(38400);
+    Serial.begin(9600);
     Log.begin(LOG_LEVEL, &Serial1, false);  //
     Wire.begin(SDA_PIN, SCL_PIN);
 //  Wire.setClock(50000);    // Set the I2C clock(50kHz), default(100kHz);    

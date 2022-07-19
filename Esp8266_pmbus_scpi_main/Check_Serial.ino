@@ -73,7 +73,7 @@ uint8_t smbus_sent(){
     return 0xAF;
   }
 //  smbus_data[0] = tohex(ui_buffer[1])*16 + tohex(ui_buffer[2]);
-  for(int i = 0; i < 32; i++){
+  for(int i = 0; i < 50; i++){
     count = i+1;
     smbus_data[i] = tohex(ui_buffer[3*i+1])*16 + tohex(ui_buffer[3*i+2]);
     if (!dataflag) return 0xAF;
@@ -88,7 +88,7 @@ uint8_t smbus_sent(){
       Log.noticeln(F("]" ));
       break;
     }
-    if (i >= 48) {
+    if (i >= 49) {
       Log.noticeln(F("No last end ']' in 32 Data"));
       delay(10);
       return 0xAF; 

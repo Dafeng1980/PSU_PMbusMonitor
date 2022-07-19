@@ -86,9 +86,7 @@ void checkButton() {
     buttonflag = true;
   }
   if(setscpicurr) {
-    if(currlh)
     modifycurr(setcurr);
-    else modifycurrl(setcurr);
     setscpicurr = false;
     buttonflag = true;
   }
