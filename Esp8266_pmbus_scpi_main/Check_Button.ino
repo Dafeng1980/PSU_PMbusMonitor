@@ -85,7 +85,7 @@ void checkButton() {
     subscpiflag = false;
     buttonflag = true;
   }
-  if(setscpicurr) {
+  if(setscpicurr) { 
     modifycurr(setcurr);
     setscpicurr = false;
     buttonflag = true;
@@ -179,7 +179,7 @@ void subMQTT(String topic) {
 
 void pubMQTT(const char* topic, const char* payload, bool retainFlag) {
   if (client.connected()) {
-    Log.traceln(F("[MQTT_publish] topic: %s msg: %s "), topic, payload);
+    if(serialflag) Log.traceln(F("[MQTT_publish] topic: %s msg: %s "), topic, payload);
     client.publish(topic, payload, retainFlag);
   } else {
     Log.traceln(F("Client not connected, aborting thes publication"));

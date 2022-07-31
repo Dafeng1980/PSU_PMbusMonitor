@@ -157,7 +157,7 @@ void smbus_command_sent(uint8_t com){
       uint8_t ps_i2c_address_;
       uint8_t actual_size;
       int count;
-      char d[200];
+      char d[800];
 //   const char hex_table[]{'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F'};
       struct smbusCommand
         {      
@@ -167,9 +167,9 @@ void smbus_command_sent(uint8_t com){
             uint8_t writebytes;
             uint8_t readbytes;
             uint16_t dataword;
-            uint8_t datablock[65];
+            uint8_t datablock[256];
             uint16_t blocksize;
-            uint8_t datablock_b[65];
+            uint8_t datablock_b[256];
             uint16_t blocksize_b;              
         }sm;
         smbuscomun = true;
@@ -210,13 +210,13 @@ void smbus_command_sent(uint8_t com){
         ps_i2c_address_ = smbus_data[1];
         sm.commands = smbus_data[2];
         sm.blocksize_b = smbus_data[3]; //Max size 32 block
-        if(sm.blocksize_b > 64) {
+        if(sm.blocksize_b > 255) {
              Log.errorln(F("Read Blocks: Fail size too big."));
              pub("pmbus/info/read", "Read Blocks: Fail size too big.");
              break; 
         }
         actual_size = smbus_readBlock(ps_i2c_address_, sm.commands, sm.datablock, sm.blocksize_b);
-        if(actual_size > 64) {
+        if(actual_size > 255) {
              Log.errorln(F("Read Blocks: Fail Actual size too big."));
              pub("pmbus/info/read", "Read Blocks: Fail Actual size too big.");
              break; 
@@ -230,7 +230,11 @@ void smbus_command_sent(uint8_t com){
         if(smbuscomun) snprintf (msg, MSG_BUFFER_SIZE, "%02X:[%02X%s]", sm.commands, actual_size, d);
         else snprintf (msg, MSG_BUFFER_SIZE, "Read Block Fail.");
         pub("pmbus/info/read", msg);
-        Log.noticeln("%s", msg);                     
+        if(serialflag) {
+                Log.errorln(F("Read Blocks Size:%x"), actual_size);
+                printFru(0, actual_size-1, sm.datablock);
+        }
+//        Log.noticeln("%s", msg);                     
         delay(10);
       break;
             
@@ -265,7 +269,7 @@ void smbus_command_sent(uint8_t com){
         ps_i2c_address_ = smbus_data[1];
         sm.commands = smbus_data[2];
         sm.blocksize = smbus_data[3];   // size Max 256
-        if(sm.blocksize > 64) {
+        if(sm.blocksize > 128) {
           Log.errorln(F("Write Blocks: Fail size too big."));
           pub("pmbus/info/write", "Write Blocks: Fail size too big.");
           break;
@@ -296,14 +300,14 @@ void smbus_command_sent(uint8_t com){
 //          Serial.printf("Block n=%02X Data:%02X\n", i, sm.datablock[i]);    
         }
         sm.blocksize_b = smbus_data[sm.blocksize+4];
-        if(sm.blocksize_b > 64) {
+        if(sm.blocksize_b > 128) {
              Log.errorln(F("Read Blocks: Fail size too big."));
              pub("pmbus/info/read", "Read Blocks: Fail size too big.");
              break; 
         }
         actual_size = smbus_writeReadBlock (ps_i2c_address_, sm.commands, sm.datablock, sm.blocksize, sm.datablock_b, sm.blocksize_b);      
 //        Serial.printf("%02X:", sm.blocksize_b);
-        if(actual_size > 64) {
+        if(actual_size > 128) {
              Log.errorln(F("Read Blocks: Fail Actual size too big."));
              pub("pmbus/info/read", "Read Blocks: Fail Actual size too big.");
              break; 
@@ -317,7 +321,11 @@ void smbus_command_sent(uint8_t com){
         if(smbuscomun) snprintf (msg, MSG_BUFFER_SIZE, "[%02X%s]",actual_size, d);
         else snprintf (msg, MSG_BUFFER_SIZE, "Write Read Blocks Fail.");
         pub("pmbus/info/read", msg);
-        Log.noticeln("%s", msg);      
+        if(actual_size >16) {
+                Log.errorln(F("Read Blocks Size:%x"), actual_size);
+                printFru(0, actual_size-1, sm.datablock_b);
+        }
+        else Log.noticeln("%s", msg);      
         delay(10);     
         break;
 

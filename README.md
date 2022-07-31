@@ -16,3 +16,6 @@
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-01s.jpg)![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp-12F.jpg) <br/> 
 ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/ESP8266hekr.png) ![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/ESP8266hekrb.jpg)
 
+### ESP8266 HEKR V1.1 Board & Schematic:  <br/>
+![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/HEKR_PIN.png) <br/>
+![image](https://github.com/Dafeng1980/PowerPMbusTools/raw/master/doc/esp8266mqtt.png) <br/>

@@ -6,8 +6,8 @@ void checkSensors(){
         if(readpmbusdata()){
             if(0 != pd.statusWord && statusflag && serialflag) pmbusStatus();                 
             if(wifistatus && mqttflag) publishPmbusData(pd);
-            if(wifistatus && mqttflag && statusflag) pubPmbusStatus();
-            if(0 == count%3 && serialflag) printpmbusData(pd);         
+            if(wifistatus && mqttflag && statusflag) pubPmbusStatus(); 
+            if(0 == count%3 && serialflag) printpmbusData(pd);        
           }
           count++;
           buttonflag = true;                  
@@ -26,7 +26,7 @@ bool readpmbusdata(){
             }
          }
           if(serialflag)Log.noticeln(F("PMBUS Polling Fail loop: %l, Type 'h' To Help"), count);
-          else          Log.noticeln(F("PMBUS Polling Fail loop: %l,"), count);
+//          else          Log.noticeln(F("PMBUS Polling Fail loop: %l,"), count);
           delay(10);      
           return ret = false;
        }
@@ -307,20 +307,19 @@ void pmbusStatus(){
 }
 
 void printFru(uint8_t first, uint8_t last, uint8_t *values) {
-      int i,address;
       char c[6];
       Log.notice("    ");
-      for (i = 0; i < 16; i++) {
+      for (int i = 0; i < 16; i++) {
               sprintf(c, "%3x",  i);
               Log.notice("%s", c);
            }
-      for (address = 0; address <= 255; address++) {   
+      for (int address = 0; address <= 255; address++) {   
             if (address % 16 == 0) {
                   sprintf(c, "0x%02x:", address & 0xF0);
                   Log.notice(CR "%s", c);
                 }              
             if (address >= first && address <= last) {
-                  sprintf(c, " %02x", values[i]);
+                  sprintf(c, " %02x", values[address]);
                   Log.notice("%s", c);
               }
             else Log.notice("   ");

@@ -17,10 +17,11 @@
 #define PEC_DISABLE  0
 #define PS_I2C_ADDRESS 0x58 
 #define PS_PARTNER_ADDRESS 0x5E
-#define MSG_BUFFER_SIZE  (200)
-#define UI_BUFFER_SIZE (200)
+#define MSG_BUFFER_SIZE  (1024)
+#define UI_BUFFER_SIZE (256)
 #define I2C_NOSTOP 0
 #define LOG_LEVEL LOG_LEVEL_VERBOSE
+//#define MQTT_MAX_PACKET_SIZE 1024
 
 static struct PowerPmbus
 {
@@ -42,7 +43,7 @@ static struct PowerPmbus
   uint8_t i2cAddr;  
 }pd;
 
-uint8_t smbus_data[128];
+uint8_t smbus_data[256];
 static uint8_t eepbuffer[256];
 static uint8_t key = 0;
 static uint8_t ps_i2c_address;
