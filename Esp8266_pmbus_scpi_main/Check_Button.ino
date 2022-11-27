@@ -315,19 +315,24 @@ void pmbus_devices_init(){
   bool scanpsu = true;    
   while(scanpsu){
     ledflash();
-    pmbusdetects();
+    n = pmbusdetects();
     delay(100);
     i--;
     if(n > 1)  scanpsu = false;
     if(i <= 0) scanpsu = false;
     }
+    if(n == 0) {
+          ps_i2c_address = PS_I2C_ADDRESS;
+          ps_patner_address = PS_PARTNER_ADDRESS;
+      }
     Log.noticeln("PMBUSADDRESS 0x%x:", ps_i2c_address);
     n = 0;
     scanpsu = false;
+    eeprom_address = 0x50 + (ps_i2c_address & 0x07);
     delay(100);
  }
 
-void pmbusdetects() {
+int pmbusdetects() {
   uint8_t n = 0, address, rerror;
   char c[6];
   Log.notice("   ");                   // table header
@@ -336,15 +341,13 @@ void pmbusdetects() {
     Log.notice("%s", c);
   }
   Log.notice(CR "%x:", 0x50);
-  for (address = 88; address <= 95; address++) {
+  for (address = 88; address <= 95; address++){
         Wire.beginTransmission(address);
         rerror = Wire.endTransmission();
         if (rerror == 0) {                  // device found        
           n++;
-          if(n == 1) ps_i2c_address = address;
-          else ps_i2c_address = PS_I2C_ADDRESS;
+          if     (n == 1) ps_i2c_address = address;
           if(n == 2) ps_patner_address = address;
-          else ps_patner_address = PS_PARTNER_ADDRESS;
           sprintf(c, " %02x", address);
           Log.notice("%s", c);       
         } 
@@ -358,6 +361,7 @@ void pmbusdetects() {
     }
     Log.noticeln(CR"");
     Log.noticeln("%x",n);
+    return n;
 }
 
 void i2cdetects(uint8_t first, uint8_t last) {

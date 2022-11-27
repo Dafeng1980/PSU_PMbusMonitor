@@ -12,11 +12,11 @@
 #include <PubSubClient.h>
 
 #define Base_Topic "npi/"
-#define TWI_BUFFER_SIZE 128
+#define TWI_BUFFER_SIZE 256
 #define PEC_ENABLE  1      //Smbus PEC(Packet Error Code) support. 1 = Enabled, 0 = Disabled.
 #define PEC_DISABLE  0
 #define PS_I2C_ADDRESS 0x58 
-#define PS_PARTNER_ADDRESS 0x5E
+#define PS_PARTNER_ADDRESS 0x5B
 #define MSG_BUFFER_SIZE  (1024)
 #define UI_BUFFER_SIZE (256)
 #define I2C_NOSTOP 0

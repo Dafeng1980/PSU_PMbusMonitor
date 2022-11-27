@@ -395,6 +395,59 @@ uint8_t smbus_writeReadBlock(uint8_t address, uint8_t command, uint8_t *block_ou
   }
 }
 
+
+uint16_t smbus_processCall(uint8_t address, uint8_t command, uint16_t data)
+{
+  if (pecflag)
+  {
+    uint8_t input[3];
+    input[0] = 0x00;
+    input[1] = 0x00;
+    input[2] = 0x00;
+
+    pecClear();
+    pecAdd(address << 1);
+    pecAdd(command);
+    pecAdd(data & 0xff);
+    pecAdd(data >> 8);
+    Protocol = false;  //sends a restart message after transmission.
+    if(i2c_writeWordData(address, command, data)){
+        Log.errorln(F("ProcessCall write Fail"));
+        smbuscomun =false;
+      }    
+    pecAdd((address << 1) | 0x01);
+    Protocol = true;  // sends a stop message after transmission
+    if (i2c_readBlockData(address, 3, input))
+      {
+          Log.errorln(F("ProcessCall read Fail"));
+          smbuscomun =false;
+        }
+    pecAdd(input[0]);
+    pecAdd(input[1]);
+    if (pecGet() != input[2]){
+      Log.errorln(F("Read Word With Pec: Fail pec"));
+      smbuscomun =false;
+    }
+    return input[1] << 8 | input[0];
+  }
+  
+  else{
+  Protocol = false;  //sends a restart message after transmission.
+  if(i2c_writeWordData(address, command, data)){
+     Log.errorln(F("ProcessCall write Fail"));
+     smbuscomun =false;
+  }
+      uint16_t rdata;
+  Protocol = true;  // sends a stop message after transmission
+  if (i2c_readWordData(address, &rdata)) {
+      Log.errorln(F("rocessCall read Fail."));
+      smbuscomun =false;
+    }
+   return (rdata << 8) | (rdata >> 8);
+  }
+}
+
+
 void smbus_sendByte(uint8_t address, uint8_t command)
 {
   if (pecflag)
